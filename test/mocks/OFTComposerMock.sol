@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { IOAppComposer } from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppComposer.sol";
 
-contract ONFT721ComposerMock is IOAppComposer {
+contract OFTComposerMock is IOAppComposer {
     // default empty values for testing a lzCompose received message
     address public from;
     bytes32 public guid;

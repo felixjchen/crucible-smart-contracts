@@ -7,17 +7,17 @@ import type { OmniPointHardhat } from '@layerzerolabs/toolbox-hardhat'
 
 const optimismContract: OmniPointHardhat = {
     eid: EndpointId.OPTSEP_V2_TESTNET,
-    contractName: 'MyONFT721',
+    contractName: 'MyOFT',
 }
 
 const avalancheContract: OmniPointHardhat = {
     eid: EndpointId.AVALANCHE_V2_TESTNET,
-    contractName: 'MyONFT721',
+    contractName: 'MyOFT',
 }
 
 const arbitrumContract: OmniPointHardhat = {
     eid: EndpointId.ARBSEP_V2_TESTNET,
-    contractName: 'MyONFT721',
+    contractName: 'MyOFT',
 }
 
 // To connect all the above chains to each other, we need the following pathways:
@@ -32,7 +32,7 @@ const EVM_ENFORCED_OPTIONS: OAppEnforcedOption[] = [
     {
         msgType: 1,
         optionType: ExecutorOptionType.LZ_RECEIVE,
-        gas: 100_000,
+        gas: 80000,
         value: 0,
     },
 ]
