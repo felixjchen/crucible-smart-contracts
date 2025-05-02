@@ -23,23 +23,25 @@ contract Crucible is ICrucible, OApp {
     using AlloySpecLib for AlloySpec;
     using IngotSpecLib for IngotSpec;
 
-    IAlloy public immutable alloyImplementation;
-    IIngot public immutable ingotImplementation;
+    IAlloy private immutable alloyImplementation;
+    IIngot private immutable ingotImplementation;
 
     mapping(uint256 => address) alloyRegistry;
     mapping(uint256 => address) ingotRegistry;
 
-    uint256 public fee = 5000; // in BPs, 50% = 1000 BPs
+    uint256 public fee; // in native token
     address public feeRecipient;
 
     constructor(
         address _lzEndpoint,
         address _delegate,
+        uint256 _fee,
         address _feeRecipient
-    ) OApp(_lzEndpoint, _delegate) Ownable(msg.sender) {
+    ) OApp(_lzEndpoint, _delegate) Ownable(_delegate) {
         alloyImplementation = new Alloy();
         ingotImplementation = new Ingot();
 
+        fee = _fee;
         feeRecipient = _feeRecipient;
     }
 
@@ -72,9 +74,8 @@ contract Crucible is ICrucible, OApp {
     }
 
     function _takeFee() internal returns (uint256) {
-        uint256 myFee = (msg.value * fee) / 10000;
-        uint256 lzFee = msg.value - myFee;
-        (bool ok, ) = feeRecipient.call{ value: myFee }("");
+        uint256 lzFee = msg.value - fee;
+        (bool ok, ) = feeRecipient.call{ value: fee }("");
         require(ok, "feeRecipient transfer failed");
         return lzFee;
     }

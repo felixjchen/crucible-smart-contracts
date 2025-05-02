@@ -16,7 +16,7 @@ import "forge-std/console.sol";
 import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract IngotBaseTest is TestHelperOz5 {
+contract IngotTest is TestHelperOz5 {
     using IngotSpecLib for IngotSpec;
 
     address private crucible = makeAddr("crucible");
@@ -80,7 +80,6 @@ contract IngotBaseTest is TestHelperOz5 {
         assertEq(erc20mock.balanceOf(address(ingot)), initialBalance);
         assertEq(erc20mock.balanceOf(userA), 0);
 
-        ingot.approve(address(ingot), initialBalance);
         ingot.dissolve(initialBalance);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
@@ -148,7 +147,6 @@ contract IngotBaseTest is TestHelperOz5 {
         assertEq(erc721mock.balanceOf(address(ingot)), 3);
         assertEq(erc721mock.balanceOf(userA), 0);
 
-        ingot.approve(address(ingot), 1);
         ingot.dissolve(1);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
@@ -236,7 +234,6 @@ contract IngotBaseTest is TestHelperOz5 {
         assertEq(erc1155mock.balanceOf(userA, 2), 0);
         assertEq(erc1155mock.balanceOf(userA, 3), 0);
 
-        ingot.approve(address(ingot), 11);
         ingot.dissolve(11);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);

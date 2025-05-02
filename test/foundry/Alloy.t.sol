@@ -17,12 +17,13 @@ import "forge-std/console.sol";
 import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract AlloyBaseTest is TestHelperOz5 {
+contract AlloyTest is TestHelperOz5 {
     using AlloySpecLib for AlloySpec;
 
     address private crucible = makeAddr("crucible");
     address private userA = makeAddr("userA");
     address private userB = makeAddr("userB");
+    address private userC = makeAddr("userC");
     uint256 private initialBalance = 100 ether;
 
     Alloy private alloy;
@@ -79,8 +80,63 @@ contract AlloyBaseTest is TestHelperOz5 {
         assertEq(alloy.name(), "Alloy ERC20:BRINE ERC20:PETH");
         assertEq(alloy.symbol(), "AO BRINE PETH");
 
-        console.log(address(erc20mockA));
-        console.log(address(erc20mockB));
+        assertEq(alloy.spec().ingotSpecs[0].collection, address(erc20mockA));
+        assertEq(abi.encode(alloy.spec().ingotSpecs[0].collectionType), abi.encode(CollectionType.ERC20));
+        assertEq(alloy.spec().ingotSpecs[0].ids.length, 0);
+        assertEq(alloy.spec().ingotSpecs[0].amounts.length, 0);
+        assertEq(alloy.spec().ingotSpecs[1].collection, address(erc20mockB));
+        assertEq(abi.encode(alloy.spec().ingotSpecs[1].collectionType), abi.encode(CollectionType.ERC20));
+        assertEq(alloy.spec().ingotSpecs[1].ids.length, 0);
+        assertEq(alloy.spec().ingotSpecs[1].amounts.length, 0);
+
+        // Bunch of success cases
+        vm.startPrank(userA);
+        erc20mockA.mint(userA, initialBalance);
+        erc20mockB.mint(userA, initialBalance);
+        erc20mockA.approve(address(alloy), initialBalance);
+        erc20mockB.approve(address(alloy), initialBalance);
+        alloy.fuse(initialBalance);
+        assertEq(alloy.balanceOf(userA), initialBalance);
+        assertEq(alloy.totalSupply(), initialBalance);
+        assertEq(erc20mockA.balanceOf(address(alloy)), initialBalance);
+        assertEq(erc20mockB.balanceOf(address(alloy)), initialBalance);
+        assertEq(erc20mockA.balanceOf(userA), 0);
+        assertEq(erc20mockB.balanceOf(userA), 0);
+
+        alloy.dissolve(initialBalance);
+        assertEq(alloy.balanceOf(userA), 0);
+        assertEq(alloy.totalSupply(), 0);
+        assertEq(erc20mockA.balanceOf(address(alloy)), 0);
+        assertEq(erc20mockB.balanceOf(address(alloy)), 0);
+        assertEq(erc20mockA.balanceOf(userA), initialBalance);
+        assertEq(erc20mockB.balanceOf(userA), initialBalance);
+        vm.stopPrank();
+
+        // Bunch of failure cases
+        vm.startPrank(userB);
+        erc20mockA.approve(address(alloy), initialBalance);
+        erc20mockB.approve(address(alloy), initialBalance);
+        vm.expectRevert();
+        alloy.fuse(initialBalance); // Not enough A or B
+        erc20mockA.mint(userB, initialBalance);
+        vm.expectRevert();
+        alloy.fuse(initialBalance); // Not enough B
+        erc20mockB.mint(userB, initialBalance);
+        alloy.fuse(initialBalance);
+        alloy.dissolve(initialBalance);
+        vm.stopPrank();
+
+        vm.startPrank(userC);
+        erc20mockA.mint(userC, 1 wei);
+        erc20mockB.mint(userC, 1 wei);
+        vm.expectRevert();
+        alloy.fuse(1 wei);
+        erc20mockA.approve(address(alloy), 1 wei);
+        vm.expectRevert();
+        alloy.fuse(1 wei);
+        erc20mockB.approve(address(alloy), 1 wei);
+        alloy.fuse(1 wei);
+        vm.stopPrank();
     }
 
     function test_two_erc721() public {}

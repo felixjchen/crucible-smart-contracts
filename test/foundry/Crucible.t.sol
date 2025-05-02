@@ -26,33 +26,47 @@ contract CrucibleTest is TestHelperOz5 {
     address private feeRecipient = makeAddr("feeRecipient");
     address private userA = makeAddr("userA");
     address private userB = makeAddr("userB");
-
     uint256 private initialBalance = 100 ether;
+
+    ERC20Mock private erc20mockA;
+    ERC20Mock private erc20mockB;
+    ERC721Mock private erc721mockA;
+    ERC721Mock private erc721mockB;
+    ERC1155Mock private erc1155mockA;
+    ERC1155Mock private erc1155mockB;
 
     function setUp() public virtual override {
         super.setUp();
         setUpEndpoints(2, LibraryType.UltraLightNode);
 
-        vm.startPrank(owner);
-        aCrucible = Crucible(
-            _deployOApp(type(Crucible).creationCode, abi.encode(address(endpoints[aEid]), owner, feeRecipient))
-        );
+        erc20mockA = new ERC20Mock("BRINE", "BRINE");
+        erc20mockB = new ERC20Mock("PETH", "PETH");
+        erc721mockA = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
+        erc721mockB = new ERC721Mock("BZUKA", "BZUKA");
+        erc1155mockA = new ERC1155Mock("PurpleBeta", "PurpleBeta");
+        erc1155mockB = new ERC1155Mock("GagnaRock", "GagnaRock");
 
+        aCrucible = Crucible(
+            _deployOApp(type(Crucible).creationCode, abi.encode(address(endpoints[aEid]), owner, 1, feeRecipient))
+        );
         bCrucible = Crucible(
-            _deployOApp(type(Crucible).creationCode, abi.encode(address(endpoints[aEid]), owner, feeRecipient))
+            _deployOApp(type(Crucible).creationCode, abi.encode(address(endpoints[aEid]), owner, 1, feeRecipient))
         );
         // config and wire the ofts
-        address[] memory crucibles = new address[](2);
-        crucibles[0] = address(aCrucible);
-        crucibles[1] = address(bCrucible);
-        this.wireOApps(crucibles);
+        vm.startPrank(owner);
+        aCrucible.setPeer(bEid, addressToBytes32(address(bCrucible)));
+        bCrucible.setPeer(aEid, addressToBytes32(address(aCrucible)));
         vm.stopPrank();
 
-        // vm.deal(userA, 1000 ether);
-        // vm.deal(userB, 1000 ether);
+        vm.deal(userA, 1000 ether);
+        vm.deal(userB, 1000 ether);
     }
 
-    function test_constructor() public {}
+    function test_constructor() public view {
+        assertEq(aCrucible.owner(), owner);
+        assertEq(aCrucible.fee(), 1);
+        assertEq(aCrucible.feeRecipient(), feeRecipient);
+    }
 
     // function test_send_oft() public {
     //     uint256 tokensToSend = 1 ether;
