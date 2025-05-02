@@ -11,7 +11,6 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 struct AlloySpec {
-    string temp; // TODO: to make it generate a ??
     IngotSpec[] ingotSpecs;
 }
 
@@ -20,8 +19,14 @@ library AlloySpecLib {
     using IngotSpecLib for IngotSpec;
 
     function validate(AlloySpec calldata _alloySpec) public pure {
+        assert(_alloySpec.ingotSpecs.length > 1);
+        uint256 lastIngotSpecId = 0;
         for (uint256 i = 0; i < _alloySpec.ingotSpecs.length; ++i) {
             _alloySpec.ingotSpecs[i].validate();
+
+            uint256 ingotSpecId = _alloySpec.ingotSpecs[i].getId();
+            require(lastIngotSpecId < ingotSpecId, "IngotSpec ids must be ordered");
+            lastIngotSpecId = ingotSpecId;
         }
     }
 
@@ -29,7 +34,21 @@ library AlloySpecLib {
         return uint256(keccak256(abi.encode(_alloySpec.ingotSpecs)));
     }
 
-    function getName(AlloySpec calldata _alloySpec) public view returns (string memory) {}
+    function getName(AlloySpec memory _alloySpec) public view returns (string memory) {
+        string memory symbol = "Alloy";
+        for (uint i = 0; i < _alloySpec.ingotSpecs.length; ++i) {
+            IngotSpec memory ingotSpec = _alloySpec.ingotSpecs[i];
+            symbol = string.concat(symbol, " ", ingotSpec.getNameSuffix());
+        }
+        return symbol;
+    }
 
-    function getSymbol(AlloySpec memory _alloySpec) public view returns (string memory) {}
+    function getSymbol(AlloySpec memory _alloySpec) public view returns (string memory) {
+        string memory symbol = "AO";
+        for (uint i = 0; i < _alloySpec.ingotSpecs.length; ++i) {
+            IngotSpec memory ingotSpec = _alloySpec.ingotSpecs[i];
+            symbol = string.concat(symbol, " ", ingotSpec.getSymbolSuffix());
+        }
+        return symbol;
+    }
 }

@@ -7,8 +7,11 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-contract Mover {
+contract Mover is IERC721Receiver, IERC1155Receiver {
     using SafeERC20 for IERC20;
 
     function take(IngotSpec memory _ingotSpec, uint256 amount) public {
@@ -35,7 +38,7 @@ contract Mover {
 
     function give(IngotSpec memory _ingotSpec, uint256 amount) public {
         if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            IERC20(_ingotSpec.collection).safeTransferFrom(address(this), msg.sender, amount);
+            IERC20(_ingotSpec.collection).safeTransfer(msg.sender, amount);
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _ingotSpec.ids.length; ++i) {
                 IERC721(_ingotSpec.collection).safeTransferFrom(address(this), msg.sender, _ingotSpec.ids[i]);
@@ -53,5 +56,37 @@ contract Mover {
                 ""
             );
         }
+    }
+
+    function onERC721Received(address, address, uint256, bytes memory) public pure override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        require(false, "Batch transfer not supported");
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return
+            interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            interfaceId == type(IERC1155Receiver).interfaceId;
     }
 }

@@ -52,21 +52,20 @@ library IngotSpecLib {
         }
     }
 
-    function getName(IngotSpec calldata _ingotSpec) public view returns (string memory) {
+    function getNameSuffix(IngotSpec calldata _ingotSpec) public view returns (string memory) {
         if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            string memory name = ERC20(_ingotSpec.collection).name();
-            return string.concat("INGOT ERC20 ", name);
+            return string.concat("ERC20:", ERC20(_ingotSpec.collection).name());
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
             string memory name = ERC721(_ingotSpec.collection).name();
-            name = string.concat("INGOT ERC721 ", name, ":");
+            name = string.concat("ERC721:", name, ":");
             for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
                 name = string.concat(name, _ingotSpec.ids[i].toString(), ",");
             }
             name = string.concat(name, _ingotSpec.ids[_ingotSpec.ids.length - 1].toString());
             return name;
         } else if (_ingotSpec.collectionType == CollectionType.ERC1155) {
-            string memory name = ERC721(_ingotSpec.collection).name();
-            name = string.concat("INGOT ERC1155 ", name, ":");
+            string memory name = Strings.toHexString(uint256(uint160(_ingotSpec.collection)), 20);
+            name = string.concat("ERC1155:", name, ":");
             for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
                 name = string.concat(name, _ingotSpec.ids[i].toString(), "x", _ingotSpec.amounts[i].toString(), ",");
             }
@@ -82,33 +81,46 @@ library IngotSpecLib {
         }
     }
 
-    function getSymbol(IngotSpec memory _ingotSpec) public view returns (string memory) {
+    function getName(IngotSpec calldata _ingotSpec) public view returns (string memory) {
+        return string.concat("Ingot ", getNameSuffix(_ingotSpec));
+    }
+
+    function getSymbolSuffix(IngotSpec memory _ingotSpec) public view returns (string memory) {
         if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            string memory name = ERC20(_ingotSpec.collection).name();
-            return string.concat("IG ", name);
+            return ERC20(_ingotSpec.collection).symbol();
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
-            string memory name = ERC721(_ingotSpec.collection).name();
-            name = string.concat("IG ", name, ":");
+            string memory symbol = ERC721(_ingotSpec.collection).symbol();
+            symbol = string.concat(symbol, ":");
             for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
-                name = string.concat(name, _ingotSpec.ids[i].toString(), ",");
+                symbol = string.concat(symbol, _ingotSpec.ids[i].toString(), ",");
             }
-            name = string.concat(name, _ingotSpec.ids[_ingotSpec.ids.length - 1].toString());
-            return name;
+            symbol = string.concat(symbol, _ingotSpec.ids[_ingotSpec.ids.length - 1].toString());
+            return symbol;
         } else if (_ingotSpec.collectionType == CollectionType.ERC1155) {
-            string memory name = ERC721(_ingotSpec.collection).name();
-            name = string.concat("IG ", name, ":");
+            string memory symbol = Strings.toHexString(uint256(uint160(_ingotSpec.collection)), 20);
+            symbol = string.concat(symbol, ":");
             for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
-                name = string.concat(name, _ingotSpec.ids[i].toString(), "x", _ingotSpec.amounts[i].toString(), ",");
+                symbol = string.concat(
+                    symbol,
+                    _ingotSpec.ids[i].toString(),
+                    "x",
+                    _ingotSpec.amounts[i].toString(),
+                    ","
+                );
             }
-            name = string.concat(
-                name,
+            symbol = string.concat(
+                symbol,
                 _ingotSpec.ids[_ingotSpec.ids.length - 1].toString(),
                 "x",
                 _ingotSpec.amounts[_ingotSpec.ids.length - 1].toString()
             );
-            return name;
+            return symbol;
         } else {
             revert("Invalid collection type");
         }
+    }
+
+    function getSymbol(IngotSpec memory _ingotSpec) public view returns (string memory) {
+        return string.concat("IO ", getSymbolSuffix(_ingotSpec));
     }
 }

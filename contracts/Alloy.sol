@@ -8,38 +8,39 @@ import { IngotSpec } from "./types/IngotSpec.sol";
 import { CollectionType } from "./types/CollectionType.sol";
 import { Mover } from "./Mover.sol";
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract Alloy is IAlloy, Mover, OFT, Initializable {
+contract Alloy is IAlloy, ERC20, Mover, Initializable {
     using AlloySpecLib for AlloySpec;
 
-    uint256 public alloyId;
-    AlloySpec public alloySpec;
     ICrucible public crucible;
+
+    uint256 public alloyId;
+    AlloySpec private alloySpec;
 
     string private alloyName;
     string private alloySymbol;
 
-    constructor(
-        address _lzEndpoint,
-        address _delegate
-    ) OFT("AlloyBaseImplementation", "AlloyBaseImplementation", _lzEndpoint, _delegate) Ownable(msg.sender) {}
+    constructor() ERC20("AlloyBaseImplementation", "AlloyBaseImplementation") {}
 
     function initialize(
+        ICrucible _crucible,
         uint256 _alloyId,
-        AlloySpec calldata _alloySpec,
-        ICrucible _crucible
+        AlloySpec calldata _alloySpec
     ) public override initializer {
         require(address(_crucible) != address(0), "Crucible cannot be zero address");
+        crucible = _crucible;
 
         alloyId = _alloyId;
         alloySpec = _alloySpec;
-        crucible = _crucible;
 
         alloyName = _alloySpec.getName();
         alloySymbol = _alloySpec.getSymbol();
+    }
+
+    function spec() public view returns (AlloySpec memory) {
+        return alloySpec;
     }
 
     function name() public view override returns (string memory) {
@@ -57,7 +58,7 @@ contract Alloy is IAlloy, Mover, OFT, Initializable {
             IngotSpec memory ingotSpec = _alloySpec.ingotSpecs[i];
             take(ingotSpec, amount);
         }
-        _mint(tx.origin, amount);
+        _mint(msg.sender, amount);
     }
 
     // Unwrap
@@ -67,6 +68,16 @@ contract Alloy is IAlloy, Mover, OFT, Initializable {
             IngotSpec memory ingotSpec = _alloySpec.ingotSpecs[i];
             give(ingotSpec, amount);
         }
-        _burn(tx.origin, amount);
+        _burn(msg.sender, amount);
+    }
+
+    function crucibleBurn(address from, uint256 amount) external {
+        require(msg.sender == address(crucible), "Only crucible can burn");
+        _burn(from, amount);
+    }
+
+    function crucibleMint(address to, uint256 amount) external {
+        require(msg.sender == address(crucible), "Only crucible can mint");
+        _mint(to, amount);
     }
 }

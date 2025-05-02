@@ -7,38 +7,39 @@ import { IngotSpec, IngotSpecLib } from "./types/IngotSpec.sol";
 import { CollectionType } from "./types/CollectionType.sol";
 import { Mover } from "./Mover.sol";
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract Ingot is IIngot, Mover, OFT, Initializable {
+contract Ingot is ERC20, IIngot, Mover, Initializable {
     using IngotSpecLib for IngotSpec;
 
-    uint256 public ingotId;
-    IngotSpec public ingotSpec;
     ICrucible public crucible;
+
+    uint256 public ingotId;
+    IngotSpec private ingotSpec;
 
     string private ingotName;
     string private ingotSymbol;
 
-    constructor(
-        address _lzEndpoint,
-        address _delegate
-    ) OFT("IngotBaseImplementation", "IngotBaseImplementation", _lzEndpoint, _delegate) Ownable(_delegate) {}
+    constructor() ERC20("IngotBaseImplementation", "IngotBaseImplementation") {}
 
     function initialize(
+        ICrucible _crucible,
         uint256 _ingotId,
-        IngotSpec calldata _ingotSpec,
-        ICrucible _crucible
+        IngotSpec calldata _ingotSpec
     ) public override initializer {
         require(address(_crucible) != address(0), "Crucible cannot be zero address");
+        crucible = _crucible;
 
         ingotId = _ingotId;
         ingotSpec = _ingotSpec;
-        crucible = _crucible;
 
         ingotName = _ingotSpec.getName();
         ingotSymbol = _ingotSpec.getSymbol();
+    }
+
+    function spec() public view returns (IngotSpec memory) {
+        return ingotSpec;
     }
 
     function name() public view override returns (string memory) {
@@ -61,5 +62,15 @@ contract Ingot is IIngot, Mover, OFT, Initializable {
         IngotSpec memory _ingotSpec = ingotSpec;
         give(_ingotSpec, amount);
         _burn(msg.sender, amount);
+    }
+
+    function crucibleBurn(address from, uint256 amount) external {
+        require(msg.sender == address(crucible), "Only crucible can burn");
+        _burn(from, amount);
+    }
+
+    function crucibleMint(address to, uint256 amount) external {
+        require(msg.sender == address(crucible), "Only crucible can mint");
+        _mint(to, amount);
     }
 }
