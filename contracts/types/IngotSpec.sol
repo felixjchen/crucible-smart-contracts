@@ -9,12 +9,18 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-// In ERC20, we omit ids and amounts. We take on the wrapped ERC20's base unit.
-// In ERC721, we omit amounts. But, we use the ids array.
-// In ERC1155, we use both ids and amounts.
+/*
+| Token Type | ids | amounts | decimals                             |
+|------------|-----|---------|--------------------------------------|
+| Native     | —   | —       | ✓ (e.g. 10^6 for USDC, 10^18 for ETH) |
+| ERC20      | —   | —       | ✓ (e.g. 10^6 for USDC, 10^18 for ETH) |
+| ERC721     | ✓   | —       | —                                    |
+| ERC1155    | ✓   | ✓       | —                                    |
+*/
 struct IngotSpec {
     address collection;
     CollectionType collectionType;
+    uint8 decimals;
     uint256[] ids;
     uint256[] amounts;
 }
@@ -34,13 +40,18 @@ library IngotSpecLib {
     function validate(IngotSpec calldata _ingotSpec) public pure {
         require(_ingotSpec.collection != address(0), "IngotSpec.collection cannot be zero address");
 
-        if (_ingotSpec.collectionType == CollectionType.ERC20) {
+        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
+            require(_ingotSpec.ids.length == 0, "IngotSpec.ids must be empty for Native");
+            require(_ingotSpec.amounts.length == 0, "IngotSpec.amounts must be empty for Native");
+        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
             require(_ingotSpec.ids.length == 0, "IngotSpec.ids must be empty for ERC20");
             require(_ingotSpec.amounts.length == 0, "IngotSpec.amounts must be empty for ERC20");
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
+            require(_ingotSpec.decimals == 0, "IngotSpec.decimals must be 0 for ERC721");
             require(_ingotSpec.ids.length > 0, "IngotSpec.ids must not be empty for ERC721");
             require(_ingotSpec.amounts.length == 0, "IngotSpec.amounts must be empty for ERC721");
         } else if (_ingotSpec.collectionType == CollectionType.ERC1155) {
+            require(_ingotSpec.decimals == 0, "IngotSpec.decimals must be 0 for ERC1155");
             require(_ingotSpec.ids.length > 0, "IngotSpec.ids must not be empty for ERC1155");
             require(_ingotSpec.amounts.length > 0, "IngotSpec.amounts must not be empty for ERC1155");
             require(
@@ -53,8 +64,16 @@ library IngotSpecLib {
     }
 
     function getNameSuffix(IngotSpec calldata _ingotSpec) public view returns (string memory) {
-        if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            return string.concat("ERC20:", ERC20(_ingotSpec.collection).name());
+        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
+            return string.concat("NATIVE:10^", Strings.toString(uint256(_ingotSpec.decimals)));
+        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
+            return
+                string.concat(
+                    "ERC20:",
+                    ERC20(_ingotSpec.collection).name(),
+                    ":10^",
+                    Strings.toString(uint256(_ingotSpec.decimals))
+                );
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
             string memory name = ERC721(_ingotSpec.collection).name();
             name = string.concat("ERC721:", name, ":");

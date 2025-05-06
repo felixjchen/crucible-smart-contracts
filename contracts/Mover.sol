@@ -14,9 +14,15 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 contract Mover is IERC721Receiver, IERC1155Receiver {
     using SafeERC20 for IERC20;
 
-    function take(IngotSpec memory _ingotSpec, uint256 amount) public {
-        if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            IERC20(_ingotSpec.collection).safeTransferFrom(msg.sender, address(this), amount);
+    function take(IngotSpec memory _ingotSpec, uint256 amount) public payable {
+        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
+            require(msg.value == amount * 10 ** _ingotSpec.decimals, "Invalid amount");
+        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
+            IERC20(_ingotSpec.collection).safeTransferFrom(
+                msg.sender,
+                address(this),
+                amount * 10 ** _ingotSpec.decimals
+            );
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _ingotSpec.ids.length; ++i) {
                 IERC721(_ingotSpec.collection).safeTransferFrom(msg.sender, address(this), _ingotSpec.ids[i]);
@@ -37,8 +43,11 @@ contract Mover is IERC721Receiver, IERC1155Receiver {
     }
 
     function give(IngotSpec memory _ingotSpec, uint256 amount) public {
-        if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            IERC20(_ingotSpec.collection).safeTransfer(msg.sender, amount);
+        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
+            (bool success, ) = msg.sender.call{ value: amount * 10 ** _ingotSpec.decimals }("");
+            require(success, "Transfer failed");
+        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
+            IERC20(_ingotSpec.collection).safeTransfer(msg.sender, amount * 10 ** _ingotSpec.decimals);
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _ingotSpec.ids.length; ++i) {
                 IERC721(_ingotSpec.collection).safeTransferFrom(address(this), msg.sender, _ingotSpec.ids[i]);

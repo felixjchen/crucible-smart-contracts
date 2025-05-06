@@ -2,7 +2,8 @@
 pragma solidity ^0.8.22;
 
 enum CollectionType {
-    ERC1155,
+    NATIVE,
+    ERC20,
     ERC721,
-    ERC20
+    ERC1155
 }

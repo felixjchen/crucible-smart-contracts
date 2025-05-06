@@ -51,7 +51,7 @@ contract Ingot is ERC20, IIngot, Mover, Initializable {
     }
 
     // Wrap
-    function fuse(uint256 amount) public {
+    function fuse(uint256 amount) public payable {
         IngotSpec memory _ingotSpec = ingotSpec;
         take(_ingotSpec, amount);
         _mint(msg.sender, amount);

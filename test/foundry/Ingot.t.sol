@@ -28,6 +28,7 @@ contract IngotTest is TestHelperOz5 {
     Ingot private ingot;
 
     ERC20Mock private erc20mock;
+    ERC20Mock private erc20mockB;
     ERC721Mock private erc721mock;
     ERC1155Mock private erc1155mock;
 
@@ -44,9 +45,92 @@ contract IngotTest is TestHelperOz5 {
         vm.deal(userB, 1000 ether);
     }
 
-    function test_validateIngotSpec() public {}
+    function test_validateIngotSpec() public {
+        // IngotSpec memory ingotSpec = IngotSpec({
+        //     collection: address(0),
+        //     collectionType: CollectionType.ERC20,
+        //     decimals: 0,
+        //     ids: new uint256[](0),
+        //     amounts: new uint256[](0)
+        // });
+        // uint256[] memory ids = new uint256[](1);
+        // uint256[] memory amounts = new uint256[](1);
+        // vm.expectRevert("IngotSpec.collection cannot be zero address");
+        // ingotSpec.validate();
+        // // ERC20
+        // ingotSpec.collection = address(erc20mock);
+        // ingotSpec.ids = ids;
+        // vm.expectRevert("IngotSpec.ids must be empty for ERC20");
+        // ingotSpec.validate();
+        // ingotSpec.ids = new uint256[](0);
+        // ingotSpec.amounts = amounts;
+        // vm.expectRevert("IngotSpec.amounts must be empty for ERC20");
+        // ingotSpec.validate();
+        // // ERC721
+        // ingotSpec.collectionType = CollectionType.ERC721;
+        // ingotSpec.ids = new uint256[](0);
+        // vm.expectRevert("IngotSpec.ids must not be empty for ERC721");
+        // ingotSpec.validate();
+    }
 
-    function test_initializeOnce() public {}
+    function test_initializeOnce() public {
+        IngotSpec memory ingotSpec = IngotSpec({
+            collection: address(erc20mock),
+            collectionType: CollectionType.ERC20,
+            decimals: 0,
+            ids: new uint256[](0),
+            amounts: new uint256[](0)
+        });
+
+        uint256 ingotId = ingotSpec.getId();
+        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+
+        vm.expectRevert();
+        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+    }
+
+    function test_native() public {
+        uint256[] memory ids = new uint256[](0);
+        uint256[] memory amounts = new uint256[](0);
+        IngotSpec memory ingotSpec = IngotSpec({
+            collection: address(0),
+            collectionType: CollectionType.NATIVE,
+            decimals: 18,
+            ids: ids,
+            amounts: amounts
+        });
+        console.log(ingotSpec.collectionType == CollectionType.NATIVE);
+        uint256 ingotId = ingotSpec.getId();
+        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+
+        // assertEq(ingot.name(), "Ingot NATIVE:10^18");
+        // assertEq(ingot.symbol(), "IO NATIVE");
+
+        // assertEq(ingot.spec().collection, address(0));
+        // assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.NATIVE));
+        // assertEq(ingot.spec().decimals, 18);
+        // assertEq(ingot.spec().ids.length, 0);
+        // assertEq(ingot.spec().amounts.length, 0);
+
+        // // Bunch of success cases
+        // vm.startPrank(userA);
+        // ingot.fuse{ value: initialBalance }(1);
+        // assertEq(ingot.balanceOf(userA), 1);
+        // assertEq(ingot.totalSupply(), 1);
+        // assertEq(address(ingot).balance, initialBalance - 1 ether);
+
+        // ingot.dissolve(1);
+        // assertEq(ingot.balanceOf(userA), 0);
+        // assertEq(ingot.totalSupply(), 0);
+        // assertEq(address(ingot).balance, 0);
+        // assertEq(userA.balance, initialBalance);
+        // vm.stopPrank();
+
+        // // Bunch of failure cases
+        // vm.startPrank(userB);
+        // vm.expectRevert();
+        // ingot.fuse{ value: 1 wei }(1 wei);
+    }
 
     function test_erc20() public {
         uint256[] memory ids = new uint256[](0);
@@ -54,6 +138,7 @@ contract IngotTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
+            decimals: 0,
             ids: ids,
             amounts: amounts
         });
@@ -61,11 +146,12 @@ contract IngotTest is TestHelperOz5 {
         uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
-        assertEq(ingot.name(), "Ingot ERC20:BRINE");
+        assertEq(ingot.name(), "Ingot ERC20:BRINE:10^0");
         assertEq(ingot.symbol(), "IO BRINE");
 
         assertEq(ingot.spec().collection, address(erc20mock));
         assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.ERC20));
+        assertEq(ingot.spec().decimals, 0);
         assertEq(ingot.spec().ids.length, 0);
         assertEq(ingot.spec().amounts.length, 0);
 
@@ -98,7 +184,63 @@ contract IngotTest is TestHelperOz5 {
         ingot.fuse(10 wei);
 
         erc20mock.mint(userB, 9 wei);
+        vm.expectRevert();
+        ingot.dissolve(10 wei);
+        vm.stopPrank();
+    }
 
+    function test_erc20_decimals() public {
+        uint256[] memory ids = new uint256[](0);
+        uint256[] memory amounts = new uint256[](0);
+        IngotSpec memory ingotSpec = IngotSpec({
+            collection: address(erc20mock),
+            collectionType: CollectionType.ERC20,
+            decimals: 18,
+            ids: ids,
+            amounts: amounts
+        });
+
+        uint256 ingotId = ingotSpec.getId();
+        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+
+        assertEq(ingot.name(), "Ingot ERC20:BRINE:10^18");
+        assertEq(ingot.symbol(), "IO BRINE");
+
+        assertEq(ingot.spec().collection, address(erc20mock));
+        assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.ERC20));
+        assertEq(ingot.spec().decimals, 18);
+        assertEq(ingot.spec().ids.length, 0);
+        assertEq(ingot.spec().amounts.length, 0);
+
+        // Bunch of success cases
+        vm.startPrank(userA);
+        erc20mock.mint(userA, 1 * 10 ** 18);
+        erc20mock.approve(address(ingot), 1 * 10 ** 18);
+
+        ingot.fuse(1);
+        assertEq(ingot.balanceOf(userA), 1);
+        assertEq(ingot.totalSupply(), 1);
+        assertEq(erc20mock.balanceOf(address(ingot)), 1 * 10 ** 18);
+        assertEq(erc20mock.balanceOf(userA), 0);
+
+        ingot.dissolve(1);
+        assertEq(ingot.balanceOf(userA), 0);
+        assertEq(ingot.totalSupply(), 0);
+        assertEq(erc20mock.balanceOf(address(ingot)), 0);
+        assertEq(erc20mock.balanceOf(userA), 1 * 10 ** 18);
+        vm.stopPrank();
+
+        // Bunch of failure cases
+        vm.startPrank(userB);
+        erc20mock.mint(userB, 1 wei);
+        vm.expectRevert();
+        ingot.fuse(10 wei);
+
+        erc20mock.approve(address(ingot), 10 wei);
+        vm.expectRevert();
+        ingot.fuse(10 wei);
+
+        erc20mock.mint(userB, 9 wei);
         vm.expectRevert();
         ingot.dissolve(10 wei);
         vm.stopPrank();
@@ -114,6 +256,7 @@ contract IngotTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({
             collection: address(erc721mock),
             collectionType: CollectionType.ERC721,
+            decimals: 0,
             ids: ids,
             amounts: amounts
         });
@@ -126,6 +269,7 @@ contract IngotTest is TestHelperOz5 {
 
         assertEq(ingot.spec().collection, address(erc721mock));
         assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.ERC721));
+        assertEq(ingot.spec().decimals, 0);
         assertEq(ingot.spec().ids[0], 1);
         assertEq(ingot.spec().ids[1], 2);
         assertEq(ingot.spec().ids[2], 3);
@@ -183,6 +327,7 @@ contract IngotTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({
             collection: address(erc1155mock),
             collectionType: CollectionType.ERC1155,
+            decimals: 0,
             ids: ids,
             amounts: amounts
         });
@@ -197,6 +342,7 @@ contract IngotTest is TestHelperOz5 {
         assertEq(ingot.symbol(), symbol);
         assertEq(ingot.spec().collection, address(erc1155mock));
         assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.ERC1155));
+        assertEq(ingot.spec().decimals, 0);
         assertEq(ingot.spec().ids[0], 1);
         assertEq(ingot.spec().ids[1], 2);
         assertEq(ingot.spec().ids[2], 3);

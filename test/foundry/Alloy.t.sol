@@ -62,6 +62,7 @@ contract AlloyTest is TestHelperOz5 {
         ingotSpecs[0] = IngotSpec({
             collection: address(erc20mockA),
             collectionType: CollectionType.ERC20,
+            decimals: 1,
             ids: ids,
             amounts: amounts
         });
@@ -69,6 +70,7 @@ contract AlloyTest is TestHelperOz5 {
         ingotSpecs[1] = IngotSpec({
             collection: address(erc20mockB),
             collectionType: CollectionType.ERC20,
+            decimals: 1,
             ids: ids,
             amounts: amounts
         });
