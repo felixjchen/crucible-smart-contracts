@@ -39,10 +39,6 @@ contract IngotTest is TestHelperOz5 {
         erc20mock = new ERC20Mock("BRINE", "BRINE");
         erc721mock = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
         erc1155mock = new ERC1155Mock("PurpleBeta", "PurpleBeta");
-
-        // mint tokens
-        vm.deal(userA, 1000 ether);
-        vm.deal(userB, 1000 ether);
     }
 
     function test_validateIngotSpec() public {
@@ -99,37 +95,39 @@ contract IngotTest is TestHelperOz5 {
             ids: ids,
             amounts: amounts
         });
-        console.log(ingotSpec.collectionType == CollectionType.NATIVE);
+
         uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
-        // assertEq(ingot.name(), "Ingot NATIVE:10^18");
-        // assertEq(ingot.symbol(), "IO NATIVE");
+        assertEq(ingot.name(), "Ingot NATIVE:10^18");
+        assertEq(ingot.symbol(), "IO NATIVE");
 
-        // assertEq(ingot.spec().collection, address(0));
-        // assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.NATIVE));
-        // assertEq(ingot.spec().decimals, 18);
-        // assertEq(ingot.spec().ids.length, 0);
-        // assertEq(ingot.spec().amounts.length, 0);
+        assertEq(ingot.spec().collection, address(0));
+        assertEq(abi.encode(ingot.spec().collectionType), abi.encode(CollectionType.NATIVE));
+        assertEq(ingot.spec().decimals, 18);
+        assertEq(ingot.spec().ids.length, 0);
+        assertEq(ingot.spec().amounts.length, 0);
 
-        // // Bunch of success cases
-        // vm.startPrank(userA);
-        // ingot.fuse{ value: initialBalance }(1);
-        // assertEq(ingot.balanceOf(userA), 1);
-        // assertEq(ingot.totalSupply(), 1);
-        // assertEq(address(ingot).balance, initialBalance - 1 ether);
+        // Bunch of success cases
+        vm.deal(userA, initialBalance);
+        vm.startPrank(userA);
+        ingot.fuse{ value: initialBalance }(100);
+        assertEq(ingot.balanceOf(userA), 100);
+        assertEq(ingot.totalSupply(), 100);
+        assertEq(address(ingot).balance, initialBalance);
+        assertEq(userA.balance, 0);
 
-        // ingot.dissolve(1);
-        // assertEq(ingot.balanceOf(userA), 0);
-        // assertEq(ingot.totalSupply(), 0);
-        // assertEq(address(ingot).balance, 0);
-        // assertEq(userA.balance, initialBalance);
-        // vm.stopPrank();
+        ingot.dissolve(100);
+        assertEq(ingot.balanceOf(userA), 0);
+        assertEq(ingot.totalSupply(), 0);
+        assertEq(address(ingot).balance, 0);
+        assertEq(userA.balance, initialBalance);
+        vm.stopPrank();
 
-        // // Bunch of failure cases
-        // vm.startPrank(userB);
-        // vm.expectRevert();
-        // ingot.fuse{ value: 1 wei }(1 wei);
+        // Bunch of failure cases
+        vm.startPrank(userB);
+        vm.expectRevert();
+        ingot.fuse{ value: 1 wei }(1 wei);
     }
 
     function test_erc20() public {

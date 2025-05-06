@@ -105,7 +105,9 @@ library IngotSpecLib {
     }
 
     function getSymbolSuffix(IngotSpec memory _ingotSpec) public view returns (string memory) {
-        if (_ingotSpec.collectionType == CollectionType.ERC20) {
+        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
+            return "NATIVE";
+        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
             return ERC20(_ingotSpec.collection).symbol();
         } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
             string memory symbol = ERC721(_ingotSpec.collection).symbol();
