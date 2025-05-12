@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import { CollectionType } from "./CollectionType.sol";
+import { NuggetSpec, NuggetSpecLib } from "./NuggetSpec.sol";
 
 // TODO: Custom interfaces ?
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -9,139 +10,45 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-/*
-| Token Type | ids | amounts | decimals                             |
-|------------|-----|---------|--------------------------------------|
-| Native     | —   | —       | ✓ (e.g. 10^6 for USDC, 10^18 for ETH) |
-| ERC20      | —   | —       | ✓ (e.g. 10^6 for USDC, 10^18 for ETH) |
-| ERC721     | ✓   | —       | —                                    |
-| ERC1155    | ✓   | ✓       | —                                    |
-*/
 struct IngotSpec {
-    address collection;
-    CollectionType collectionType;
-    uint8 decimals;
-    uint256[] ids;
-    uint256[] amounts;
+    NuggetSpec[] nuggetSpecs;
 }
 
 library IngotSpecLib {
     using Strings for uint256;
+    using NuggetSpecLib for NuggetSpec;
 
     function getId(IngotSpec calldata _ingotSpec) public pure returns (uint256) {
-        return
-            uint256(
-                keccak256(
-                    abi.encode(_ingotSpec.collection, _ingotSpec.collectionType, _ingotSpec.ids, _ingotSpec.amounts)
-                )
-            );
+        return uint256(keccak256(abi.encode(_ingotSpec.nuggetSpecs)));
     }
 
     function validate(IngotSpec calldata _ingotSpec) public pure {
-        require(_ingotSpec.collection != address(0), "IngotSpec.collection cannot be zero address");
+        assert(_ingotSpec.nuggetSpecs.length > 1);
+        uint256 lastNuggetSpecId = 0;
+        for (uint256 i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
+            _ingotSpec.nuggetSpecs[i].validate();
 
-        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
-            require(_ingotSpec.ids.length == 0, "IngotSpec.ids must be empty for Native");
-            require(_ingotSpec.amounts.length == 0, "IngotSpec.amounts must be empty for Native");
-        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            require(_ingotSpec.ids.length == 0, "IngotSpec.ids must be empty for ERC20");
-            require(_ingotSpec.amounts.length == 0, "IngotSpec.amounts must be empty for ERC20");
-        } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
-            require(_ingotSpec.decimals == 0, "IngotSpec.decimals must be 0 for ERC721");
-            require(_ingotSpec.ids.length > 0, "IngotSpec.ids must not be empty for ERC721");
-            require(_ingotSpec.amounts.length == 0, "IngotSpec.amounts must be empty for ERC721");
-        } else if (_ingotSpec.collectionType == CollectionType.ERC1155) {
-            require(_ingotSpec.decimals == 0, "IngotSpec.decimals must be 0 for ERC1155");
-            require(_ingotSpec.ids.length > 0, "IngotSpec.ids must not be empty for ERC1155");
-            require(_ingotSpec.amounts.length > 0, "IngotSpec.amounts must not be empty for ERC1155");
-            require(
-                _ingotSpec.ids.length == _ingotSpec.amounts.length,
-                "IngotSpec.ids and IngotSpec.amounts must be the same length for ERC1155"
-            );
-        } else {
-            revert("Invalid collection type");
+            uint256 ingotSpecId = _ingotSpec.nuggetSpecs[i].getId();
+            require(lastNuggetSpecId < ingotSpecId, "NuggetSpec ids must be ordered");
+            lastNuggetSpecId = ingotSpecId;
         }
     }
 
-    function getNameSuffix(IngotSpec calldata _ingotSpec) public view returns (string memory) {
-        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
-            return string.concat("NATIVE:10^", Strings.toString(uint256(_ingotSpec.decimals)));
-        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            return
-                string.concat(
-                    "ERC20:",
-                    ERC20(_ingotSpec.collection).name(),
-                    ":10^",
-                    Strings.toString(uint256(_ingotSpec.decimals))
-                );
-        } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
-            string memory name = ERC721(_ingotSpec.collection).name();
-            name = string.concat("ERC721:", name, ":");
-            for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
-                name = string.concat(name, _ingotSpec.ids[i].toString(), ",");
-            }
-            name = string.concat(name, _ingotSpec.ids[_ingotSpec.ids.length - 1].toString());
-            return name;
-        } else if (_ingotSpec.collectionType == CollectionType.ERC1155) {
-            string memory name = Strings.toHexString(uint256(uint160(_ingotSpec.collection)), 20);
-            name = string.concat("ERC1155:", name, ":");
-            for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
-                name = string.concat(name, _ingotSpec.ids[i].toString(), "x", _ingotSpec.amounts[i].toString(), ",");
-            }
-            name = string.concat(
-                name,
-                _ingotSpec.ids[_ingotSpec.ids.length - 1].toString(),
-                "x",
-                _ingotSpec.amounts[_ingotSpec.ids.length - 1].toString()
-            );
-            return name;
-        } else {
-            revert("Invalid collection type");
+    function getName(IngotSpec memory _ingotSpec) public view returns (string memory) {
+        string memory symbol = "Ingot";
+        for (uint i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
+            NuggetSpec memory ingotSpec = _ingotSpec.nuggetSpecs[i];
+            symbol = string.concat(symbol, " ", ingotSpec.getNameSuffix());
         }
-    }
-
-    function getName(IngotSpec calldata _ingotSpec) public view returns (string memory) {
-        return string.concat("Ingot ", getNameSuffix(_ingotSpec));
-    }
-
-    function getSymbolSuffix(IngotSpec memory _ingotSpec) public view returns (string memory) {
-        if (_ingotSpec.collectionType == CollectionType.NATIVE) {
-            return "NATIVE";
-        } else if (_ingotSpec.collectionType == CollectionType.ERC20) {
-            return ERC20(_ingotSpec.collection).symbol();
-        } else if (_ingotSpec.collectionType == CollectionType.ERC721) {
-            string memory symbol = ERC721(_ingotSpec.collection).symbol();
-            symbol = string.concat(symbol, ":");
-            for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
-                symbol = string.concat(symbol, _ingotSpec.ids[i].toString(), ",");
-            }
-            symbol = string.concat(symbol, _ingotSpec.ids[_ingotSpec.ids.length - 1].toString());
-            return symbol;
-        } else if (_ingotSpec.collectionType == CollectionType.ERC1155) {
-            string memory symbol = Strings.toHexString(uint256(uint160(_ingotSpec.collection)), 20);
-            symbol = string.concat(symbol, ":");
-            for (uint256 i = 0; i < _ingotSpec.ids.length - 1; ++i) {
-                symbol = string.concat(
-                    symbol,
-                    _ingotSpec.ids[i].toString(),
-                    "x",
-                    _ingotSpec.amounts[i].toString(),
-                    ","
-                );
-            }
-            symbol = string.concat(
-                symbol,
-                _ingotSpec.ids[_ingotSpec.ids.length - 1].toString(),
-                "x",
-                _ingotSpec.amounts[_ingotSpec.ids.length - 1].toString()
-            );
-            return symbol;
-        } else {
-            revert("Invalid collection type");
-        }
+        return symbol;
     }
 
     function getSymbol(IngotSpec memory _ingotSpec) public view returns (string memory) {
-        return string.concat("IO ", getSymbolSuffix(_ingotSpec));
+        string memory symbol = "IO";
+        for (uint i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
+            NuggetSpec memory ingotSpec = _ingotSpec.nuggetSpecs[i];
+            symbol = string.concat(symbol, " ", ingotSpec.getSymbolSuffix());
+        }
+        return symbol;
     }
 }
