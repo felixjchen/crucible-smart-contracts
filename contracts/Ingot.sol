@@ -22,6 +22,12 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     using SafeERC20 for IERC20;
     using IngotSpecLib for IngotSpec;
 
+    event Initialized(address indexed crucible, uint256 indexed ingotId, IngotSpec ingotSpec);
+    event Fused(address indexed user, uint256 amount);
+    event Dissolved(address indexed user, uint256 amount);
+    event CrucibleMinted(address indexed user, uint256 amount);
+    event CrucibleBurned(address indexed user, uint256 amount);
+
     ICrucible public crucible;
 
     uint256 public ingotId;
@@ -45,16 +51,20 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
         ingotName = _ingotSpec.getName();
         ingotSymbol = _ingotSpec.getSymbol();
+
+        emit Initialized(address(_crucible), _ingotId, _ingotSpec);
     }
 
     function crucibleMint(address to, uint256 amount) external {
         require(msg.sender == address(crucible), "Only crucible can mint");
         _mint(to, amount);
+        emit CrucibleMinted(to, amount);
     }
 
     function crucibleBurn(address from, uint256 amount) external {
         require(msg.sender == address(crucible), "Only crucible can burn");
         _burn(from, amount);
+        emit CrucibleBurned(from, amount);
     }
 
     function spec() public view returns (IngotSpec memory) {
@@ -140,6 +150,8 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
             _take(i, amount, floorIds);
         }
         _mint(msg.sender, amount);
+
+        emit Fused(msg.sender, amount);
     }
 
     // Unwrap
@@ -148,6 +160,8 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
             _give(i, amount, floorIds);
         }
         _burn(msg.sender, amount);
+
+        emit Dissolved(msg.sender, amount);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public pure override returns (bytes4) {
