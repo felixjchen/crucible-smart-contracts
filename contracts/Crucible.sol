@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import { ICrucible } from "./interfaces/ICrucible.sol";
+import { IFeeCalculator } from "./interfaces/IFeeCalculator.sol";
 import { IIngot } from "./interfaces/IIngot.sol";
 import { Ingot } from "./Ingot.sol";
 import { IngotSpec, IngotSpecLib } from "./types/IngotSpec.sol";
@@ -24,18 +25,18 @@ contract Crucible is ICrucible, OApp {
 
     mapping(uint256 => address) ingotRegistry;
 
-    uint256 public fee; // in native token
+    IFeeCalculator public feeCalculator;
     address public feeRecipient;
 
     constructor(
         address _lzEndpoint,
         address _delegate,
-        uint256 _fee,
+        IFeeCalculator _feeCalculator,
         address _feeRecipient
     ) OApp(_lzEndpoint, _delegate) Ownable(_delegate) {
         ingotImplementation = new Ingot();
 
-        fee = _fee;
+        feeCalculator = _feeCalculator;
         feeRecipient = _feeRecipient;
     }
 
@@ -53,11 +54,12 @@ contract Crucible is ICrucible, OApp {
         return _createIngot(_ingotId, _ingotSpec);
     }
 
-    function _takeFee() internal returns (uint256) {
-        uint256 lzFee = msg.value - fee;
-        (bool ok, ) = feeRecipient.call{ value: fee }("");
+    function _takeFee(uint256 amount) internal returns (uint256) {
+        uint256 _fee = feeCalculator.bridge(msg.sender, amount);
+        uint256 _lzFee = msg.value - _fee;
+        (bool ok, ) = feeRecipient.call{ value: _fee }("");
         require(ok, "feeRecipient transfer failed");
-        return lzFee;
+        return _lzFee;
     }
 
     function sendIngot(
@@ -73,8 +75,9 @@ contract Crucible is ICrucible, OApp {
 
         bytes memory _message = abi.encode(_ingotSpec, msg.sender.addressToBytes32(), amount);
 
-        uint256 lzFee = _takeFee();
-        endpoint.send{ value: lzFee }(
+        uint256 _lzFee = _takeFee(amount);
+
+        endpoint.send{ value: _lzFee }(
             MessagingParams(_dstEid, _getPeerOrRevert(_dstEid), _message, _options, false),
             payable(msg.sender)
         );
@@ -97,8 +100,14 @@ contract Crucible is ICrucible, OApp {
         receiveIngot(_ingotSpec, _bUser.bytes32ToAddress(), _amount);
     }
 
-    // Admin Functions
-    function setFee(uint256 _fee) external onlyOwner {
-        fee = _fee;
+    // Admin
+    function setFeeCalculator(IFeeCalculator _feeCalculator) external onlyOwner {
+        require(address(_feeCalculator) != address(0), "Invalid fee calculator");
+        feeCalculator = _feeCalculator;
+    }
+
+    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+        require(_feeRecipient != address(0), "Invalid fee recipient");
+        feeRecipient = _feeRecipient;
     }
 }

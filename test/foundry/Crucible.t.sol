@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import { Crucible } from "../../../contracts/Crucible.sol";
 import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
+import { NativeFixedFeeCalculator } from "../../../contracts/NativeFixedFeeCalculator.sol";
 
 // Mock imports
 import { ERC20Mock } from "../mocks/ERC20Mock.sol";
@@ -21,6 +22,8 @@ contract CrucibleTest is TestHelperOz5 {
 
     Crucible private aCrucible;
     Crucible private bCrucible;
+
+    NativeFixedFeeCalculator private feeCalculator;
 
     address private owner = makeAddr("owner");
     address private feeRecipient = makeAddr("feeRecipient");
@@ -46,11 +49,19 @@ contract CrucibleTest is TestHelperOz5 {
         erc1155mockA = new ERC1155Mock("PurpleBeta", "PurpleBeta");
         erc1155mockB = new ERC1155Mock("GagnaRock", "GagnaRock");
 
+        feeCalculator = new NativeFixedFeeCalculator(1 wei, 1 wei, 1 wei);
+
         aCrucible = Crucible(
-            _deployOApp(type(Crucible).creationCode, abi.encode(address(endpoints[aEid]), owner, 1, feeRecipient))
+            _deployOApp(
+                type(Crucible).creationCode,
+                abi.encode(address(endpoints[aEid]), owner, feeCalculator, feeRecipient)
+            )
         );
         bCrucible = Crucible(
-            _deployOApp(type(Crucible).creationCode, abi.encode(address(endpoints[aEid]), owner, 1, feeRecipient))
+            _deployOApp(
+                type(Crucible).creationCode,
+                abi.encode(address(endpoints[aEid]), owner, feeCalculator, feeRecipient)
+            )
         );
         // config and wire the ofts
         vm.startPrank(owner);
@@ -64,7 +75,6 @@ contract CrucibleTest is TestHelperOz5 {
 
     function test_constructor() public view {
         assertEq(aCrucible.owner(), owner);
-        assertEq(aCrucible.fee(), 1);
         assertEq(aCrucible.feeRecipient(), feeRecipient);
     }
 

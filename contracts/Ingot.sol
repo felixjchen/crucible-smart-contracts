@@ -146,6 +146,8 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     // Wrap
     function fuse(uint256 amount, uint256[] calldata floorIds) public payable nonReentrant {
+        require(msg.value == crucible.feeCalculator().wrap(msg.sender, amount), "Invalid fee");
+
         for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
             _take(i, amount, floorIds);
         }
@@ -155,7 +157,9 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     }
 
     // Unwrap
-    function dissolve(uint256 amount, uint256[] calldata floorIds) public nonReentrant {
+    function dissolve(uint256 amount, uint256[] calldata floorIds) public payable nonReentrant {
+        require(msg.value == crucible.feeCalculator().unwrap(msg.sender, amount), "Invalid fee");
+
         for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
             _give(i, amount, floorIds);
         }
