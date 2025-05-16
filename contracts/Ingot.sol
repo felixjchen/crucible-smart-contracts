@@ -79,21 +79,20 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         return ingotSymbol;
     }
 
-    function _take(uint256 nuggetSpecIndex, uint256 amount, uint256[] calldata floorIds) private {
+    function _take(uint256 nuggetSpecIndex, uint256 amount) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            require(msg.value == amount * 10 ** _nuggetSpec.decimals, "Invalid amount");
+            // wrap + fee
+            require(
+                msg.value == amount * 10 ** _nuggetSpec.decimals + crucible.feeCalculator().wrap(msg.sender, amount),
+                "Invalid amount"
+            );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransferFrom(
                 msg.sender,
                 address(this),
                 amount * 10 ** _nuggetSpec.decimals
             );
-        } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            require(floorIds.length == amount, "Invalid amount");
-            for (uint i = 0; i < floorIds.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(msg.sender, address(this), floorIds[i]);
-            }
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(msg.sender, address(this), _nuggetSpec.ids[i]);
@@ -113,18 +112,23 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         }
     }
 
-    function _give(uint256 nuggetSpecIndex, uint256 amount, uint256[] calldata floorIds) private {
+    function _takeFloors(uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
+        NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
+        if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
+            require(floorIds.length == amount, "Invalid amount");
+            for (uint i = 0; i < floorIds.length; ++i) {
+                IERC721(_nuggetSpec.collection).safeTransferFrom(msg.sender, address(this), floorIds[i]);
+            }
+        }
+    }
+
+    function _give(uint256 nuggetSpecIndex, uint256 amount) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
             (bool success, ) = msg.sender.call{ value: amount * 10 ** _nuggetSpec.decimals }("");
             require(success, "Transfer failed");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransfer(msg.sender, amount * 10 ** _nuggetSpec.decimals);
-        } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            require(floorIds.length == amount, "Invalid amount");
-            for (uint i = 0; i < floorIds.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, floorIds[i]);
-            }
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, _nuggetSpec.ids[i]);
@@ -144,12 +148,26 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         }
     }
 
-    // Wrap
-    function fuse(uint256 amount, uint256[] calldata floorIds) public payable nonReentrant {
-        require(msg.value == crucible.feeCalculator().wrap(msg.sender, amount), "Invalid fee");
+    function _giveFloors(uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
+        NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
+        if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
+            require(floorIds.length == amount, "Invalid amount");
+            for (uint i = 0; i < floorIds.length; ++i) {
+                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, floorIds[i]);
+            }
+        }
+    }
 
+    // Wrap
+    function fuse(uint256 amount, uint256[][] calldata floorIds) public payable nonReentrant {
+        uint256 j = 0;
         for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
-            _take(i, amount, floorIds);
+            if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {
+                _take(i, amount);
+            } else {
+                _takeFloors(i, amount, floorIds[j]);
+                ++j;
+            }
         }
         _mint(msg.sender, amount);
 
@@ -157,14 +175,18 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     }
 
     // Unwrap
-    function dissolve(uint256 amount, uint256[] calldata floorIds) public payable nonReentrant {
+    function dissolve(uint256 amount, uint256[][] calldata floorIds) public payable nonReentrant {
         require(msg.value == crucible.feeCalculator().unwrap(msg.sender, amount), "Invalid fee");
-
+        uint256 j = 0;
         for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
-            _give(i, amount, floorIds);
+            if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {
+                _give(i, amount);
+            } else {
+                _giveFloors(i, amount, floorIds[j]);
+                ++j;
+            }
         }
         _burn(msg.sender, amount);
-
         emit Dissolved(msg.sender, amount);
     }
 
@@ -197,6 +219,7 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         return
             interfaceId == type(IERC165).interfaceId ||
             interfaceId == type(IERC721Receiver).interfaceId ||
-            interfaceId == type(IERC1155Receiver).interfaceId;
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            interfaceId == type(IIngot).interfaceId;
     }
 }

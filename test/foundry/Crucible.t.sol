@@ -3,7 +3,11 @@ pragma solidity ^0.8.20;
 
 import { Crucible } from "../../../contracts/Crucible.sol";
 import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
+import { IIngot } from "../../../contracts/interfaces/IIngot.sol";
 import { NativeFixedFeeCalculator } from "../../../contracts/NativeFixedFeeCalculator.sol";
+import { IngotSpec, IngotSpecLib } from "../../../contracts/types/IngotSpec.sol";
+import { NuggetSpec } from "../../../contracts/types/NuggetSpec.sol";
+import { CollectionType } from "../../../contracts/types/CollectionType.sol";
 
 // Mock imports
 import { ERC20Mock } from "../mocks/ERC20Mock.sol";
@@ -15,7 +19,7 @@ import "forge-std/console.sol";
 import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 
 contract CrucibleTest is TestHelperOz5 {
-    // using OptionsBuilder for bytes;
+    using IngotSpecLib for IngotSpec;
 
     uint32 private aEid = 1;
     uint32 private bEid = 2;
@@ -23,6 +27,7 @@ contract CrucibleTest is TestHelperOz5 {
     Crucible private aCrucible;
     Crucible private bCrucible;
 
+    uint256 private feeAmount = 11 wei;
     NativeFixedFeeCalculator private feeCalculator;
 
     address private owner = makeAddr("owner");
@@ -31,25 +36,17 @@ contract CrucibleTest is TestHelperOz5 {
     address private userB = makeAddr("userB");
     uint256 private initialBalance = 100 ether;
 
-    ERC20Mock private erc20mockA;
-    ERC20Mock private erc20mockB;
-    ERC721Mock private erc721mockA;
-    ERC721Mock private erc721mockB;
-    ERC1155Mock private erc1155mockA;
-    ERC1155Mock private erc1155mockB;
+    ERC20Mock private erc20mock;
+    ERC721Mock private erc721mock;
 
     function setUp() public virtual override {
         super.setUp();
         setUpEndpoints(2, LibraryType.UltraLightNode);
 
-        erc20mockA = new ERC20Mock("BRINE", "BRINE");
-        erc20mockB = new ERC20Mock("PETH", "PETH");
-        erc721mockA = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
-        erc721mockB = new ERC721Mock("BZUKA", "BZUKA");
-        erc1155mockA = new ERC1155Mock("PurpleBeta", "PurpleBeta");
-        erc1155mockB = new ERC1155Mock("GagnaRock", "GagnaRock");
+        erc20mock = new ERC20Mock("BRINE", "BRINE");
+        erc721mock = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
 
-        feeCalculator = new NativeFixedFeeCalculator(1 wei, 1 wei, 1 wei);
+        feeCalculator = new NativeFixedFeeCalculator(feeAmount, feeAmount, feeAmount);
 
         aCrucible = Crucible(
             _deployOApp(
@@ -68,14 +65,71 @@ contract CrucibleTest is TestHelperOz5 {
         aCrucible.setPeer(bEid, addressToBytes32(address(bCrucible)));
         bCrucible.setPeer(aEid, addressToBytes32(address(aCrucible)));
         vm.stopPrank();
+    }
 
-        vm.deal(userA, 1000 ether);
-        vm.deal(userB, 1000 ether);
+    function getIngotSpec() public view returns (IngotSpec memory) {
+        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](2) });
+        uint256[] memory ids = new uint256[](0);
+        uint256[] memory amounts = new uint256[](0);
+        NuggetSpec memory nuggetSpecA = NuggetSpec({
+            collection: address(0),
+            collectionType: CollectionType.NATIVE,
+            decimals: 0,
+            ids: ids,
+            amounts: amounts
+        });
+        NuggetSpec memory nuggetSpecB = NuggetSpec({
+            collection: address(erc721mock),
+            collectionType: CollectionType.ERC721FLOOR,
+            decimals: 0,
+            ids: ids,
+            amounts: amounts
+        });
+        ingotSpec.nuggetSpecs[0] = nuggetSpecB;
+        ingotSpec.nuggetSpecs[1] = nuggetSpecA;
+
+        return ingotSpec;
     }
 
     function test_constructor() public view {
         assertEq(aCrucible.owner(), owner);
+        assertEq(address(aCrucible.feeCalculator()), address(feeCalculator));
         assertEq(aCrucible.feeRecipient(), feeRecipient);
+    }
+
+    function test_createIngot() public {
+        IngotSpec memory ingotSpec = getIngotSpec();
+        assertEq(aCrucible.ingotRegistry(ingotSpec.getId()), address(0), "Ingot should not exist before creation");
+        IIngot ingot = IIngot(aCrucible.createIngot(ingotSpec));
+        assertTrue(aCrucible.ingotRegistry(ingotSpec.getId()) != address(0), "Ingot should exist after creation");
+
+        vm.expectRevert("Ingot already exists");
+        aCrucible.createIngot(ingotSpec);
+
+        vm.deal(address(userA), 3 wei + 2 * feeAmount);
+        erc721mock.mint(userA, 0);
+        erc721mock.mint(userA, 1);
+        erc721mock.mint(userA, 2);
+
+        vm.startPrank(userA);
+        erc721mock.approve(address(ingot), 0);
+        erc721mock.approve(address(ingot), 1);
+        erc721mock.approve(address(ingot), 2);
+        uint256[][] memory floorIds = new uint256[][](1);
+        floorIds[0] = new uint256[](3);
+        floorIds[0][0] = 0;
+        floorIds[0][1] = 1;
+        floorIds[0][2] = 2;
+        ingot.fuse{ value: 3 wei + feeAmount }(3, floorIds);
+        assertEq(ingot.balanceOf(userA), 3);
+        assertEq(ingot.totalSupply(), 3);
+        assertEq(userA.balance, feeAmount);
+        assertEq(erc721mock.balanceOf(userA), 0);
+        ingot.dissolve{ value: feeAmount }(3, floorIds);
+        assertEq(ingot.balanceOf(userA), 0);
+        assertEq(ingot.totalSupply(), 0);
+        assertEq(userA.balance, 3 wei);
+        assertEq(erc721mock.balanceOf(userA), 3);
     }
 
     // function test_send_oft() public {

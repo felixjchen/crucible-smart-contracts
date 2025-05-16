@@ -10,18 +10,18 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 /*
-| Token Type     | ids | amounts | decimals                                |
-|----------------|:---:|:-------:|-----------------------------------------|
-| Native         | —   | —       | ✓ (e.g. 10^6 for USDC, 10^18 for ETH)   |
-| ERC20          | —   | —       | ✓ (e.g. 10^6 for USDC, 10^18 for ETH)   |
-| ERC721FLOOR    | —   | —       | —                                       |
-| ERC721         | ✓   | —       | —                                       |
-| ERC1155        | ✓   | ✓       | —                                       |
+| Token Type    | collection               | decimals | ids               | amounts                          |
+|---------------|--------------------------|----------|-------------------|----------------------------------|
+| Native        | `== address(0)`          | `>= 0`   | `length == 0`     | `length == 0`                    |
+| ERC20         | `!= address(0)`          | `>= 0`   | `length == 0`     | `length == 0`                    |
+| ERC721FLOOR   | `!= address(0)`          | `== 0`   | `length == 0`     | `length == 0`                    |
+| ERC721        | `!= address(0)`          | `== 0`   | `length > 0`      | `length == 0`                    |
+| ERC1155       | `!= address(0)`          | `== 0`   | `length > 0`      | `length > 0` (== `ids.length`)   |
 */
 struct NuggetSpec {
     address collection;
     CollectionType collectionType;
-    uint8 decimals;
+    uint24 decimals; // TODO: Add Floor amounts
     uint256[] ids;
     uint256[] amounts;
 }
@@ -34,23 +34,31 @@ library NuggetSpecLib {
     }
 
     function validate(NuggetSpec calldata _nugetSpec) public pure {
-        require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address");
-
         if (_nugetSpec.collectionType == CollectionType.NATIVE) {
+            require(_nugetSpec.collection == address(0), "NuggetSpec.collection must be zero address for Native");
+            require(_nugetSpec.decimals >= 0, "NuggetSpec.decimals must be >= 0 for Native");
             require(_nugetSpec.ids.length == 0, "NuggetSpec.ids must be empty for Native");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for Native");
         } else if (_nugetSpec.collectionType == CollectionType.ERC20) {
+            require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC20");
+            require(_nugetSpec.decimals >= 0, "NuggetSpec.decimals must be >= 0 for ERC20");
             require(_nugetSpec.ids.length == 0, "NuggetSpec.ids must be empty for ERC20");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC20");
-        } else if (_nugetSpec.collectionType == CollectionType.ERC721) {
-            require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC721");
-            require(_nugetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC721");
-            require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721");
         } else if (_nugetSpec.collectionType == CollectionType.ERC721FLOOR) {
+            require(
+                _nugetSpec.collection != address(0),
+                "NuggetSpec.collection cannot be zero address for ERC721FLOOR"
+            );
             require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC721FLOOR");
             require(_nugetSpec.ids.length == 0, "NuggetSpec.ids must be empty for ERC721FLOOR");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721FLOOR");
+        } else if (_nugetSpec.collectionType == CollectionType.ERC721) {
+            require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC721");
+            require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC721");
+            require(_nugetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC721");
+            require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721");
         } else if (_nugetSpec.collectionType == CollectionType.ERC1155) {
+            require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC1155");
             require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC1155");
             require(_nugetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC1155");
             require(_nugetSpec.amounts.length > 0, "NuggetSpec.amounts must not be empty for ERC1155");

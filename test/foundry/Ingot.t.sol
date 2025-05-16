@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
+import { IIngot } from "../../../contracts/interfaces/IIngot.sol";
 import { Ingot } from "../../../contracts/Ingot.sol";
 import { IngotSpec, IngotSpecLib } from "../../../contracts/types/IngotSpec.sol";
 import { NuggetSpec, NuggetSpecLib } from "../../../contracts/types/NuggetSpec.sol";
@@ -80,6 +81,7 @@ contract IngotTest is TestHelperOz5 {
         assertTrue(ingot.supportsInterface(type(IERC165).interfaceId));
         assertTrue(ingot.supportsInterface(type(IERC721Receiver).interfaceId));
         assertTrue(ingot.supportsInterface(type(IERC1155Receiver).interfaceId));
+        assertTrue(ingot.supportsInterface(type(IIngot).interfaceId));
     }
 
     function test_isERC721Receiver() public view {

@@ -36,6 +36,8 @@ contract IngotSingleTest is TestHelperOz5 {
     ERC721Mock private erc721mock;
     ERC1155Mock private erc1155mock;
 
+    uint256[][] emptyFloorIds;
+
     function setUp() public virtual override {
         super.setUp();
         setUpEndpoints(2, LibraryType.UltraLightNode);
@@ -82,13 +84,13 @@ contract IngotSingleTest is TestHelperOz5 {
         // Bunch of success cases
         vm.deal(userA, initialBalance);
         vm.startPrank(userA);
-        ingot.fuse{ value: initialBalance }(100, new uint256[](0));
+        ingot.fuse{ value: initialBalance }(100, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 100);
         assertEq(ingot.totalSupply(), 100);
         assertEq(address(ingot).balance, initialBalance);
         assertEq(userA.balance, 0);
 
-        ingot.dissolve(100, new uint256[](0));
+        ingot.dissolve(100, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(address(ingot).balance, 0);
@@ -98,15 +100,15 @@ contract IngotSingleTest is TestHelperOz5 {
         // Bunch of failure cases
         vm.startPrank(userB);
         vm.expectRevert();
-        ingot.fuse{ value: 1 wei }(1 wei, new uint256[](0));
+        ingot.fuse{ value: 1 wei }(1 wei, emptyFloorIds);
 
         vm.deal(userB, 1 ether);
         vm.expectRevert();
-        ingot.fuse{ value: 1 wei }(1 ether, new uint256[](0));
+        ingot.fuse{ value: 1 wei }(1 ether, emptyFloorIds);
         vm.expectRevert();
-        ingot.fuse{ value: 1 ether }(1 ether, new uint256[](0));
+        ingot.fuse{ value: 1 ether }(1 ether, emptyFloorIds);
         // 18 decimals will succeed
-        ingot.fuse{ value: 1 ether }(1, new uint256[](0));
+        ingot.fuse{ value: 1 ether }(1, emptyFloorIds);
     }
 
     function test_erc20() public {
@@ -139,13 +141,13 @@ contract IngotSingleTest is TestHelperOz5 {
         erc20mock.mint(userA, initialBalance);
         erc20mock.approve(address(ingot), initialBalance);
 
-        ingot.fuse(initialBalance, new uint256[](0));
+        ingot.fuse(initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), initialBalance);
         assertEq(ingot.totalSupply(), initialBalance);
         assertEq(erc20mock.balanceOf(address(ingot)), initialBalance);
         assertEq(erc20mock.balanceOf(userA), 0);
 
-        ingot.dissolve(initialBalance, new uint256[](0));
+        ingot.dissolve(initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc20mock.balanceOf(address(ingot)), 0);
@@ -156,15 +158,15 @@ contract IngotSingleTest is TestHelperOz5 {
         vm.startPrank(userB);
         erc20mock.mint(userB, 1 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, new uint256[](0));
+        ingot.fuse(10 wei, emptyFloorIds);
 
         erc20mock.approve(address(ingot), 10 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, new uint256[](0));
+        ingot.fuse(10 wei, emptyFloorIds);
 
         erc20mock.mint(userB, 9 wei);
         vm.expectRevert();
-        ingot.dissolve(10 wei, new uint256[](0));
+        ingot.dissolve(10 wei, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -198,13 +200,13 @@ contract IngotSingleTest is TestHelperOz5 {
         erc20mock.mint(userA, 1 * 10 ** 18);
         erc20mock.approve(address(ingot), 1 * 10 ** 18);
 
-        ingot.fuse(1, new uint256[](0));
+        ingot.fuse(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc20mock.balanceOf(address(ingot)), 1 * 10 ** 18);
         assertEq(erc20mock.balanceOf(userA), 0);
 
-        ingot.dissolve(1, new uint256[](0));
+        ingot.dissolve(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc20mock.balanceOf(address(ingot)), 0);
@@ -215,15 +217,15 @@ contract IngotSingleTest is TestHelperOz5 {
         vm.startPrank(userB);
         erc20mock.mint(userB, 1 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, new uint256[](0));
+        ingot.fuse(10 wei, emptyFloorIds);
 
         erc20mock.approve(address(ingot), 10 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, new uint256[](0));
+        ingot.fuse(10 wei, emptyFloorIds);
 
         erc20mock.mint(userB, 9 wei);
         vm.expectRevert();
-        ingot.dissolve(10 wei, new uint256[](0));
+        ingot.dissolve(10 wei, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -258,10 +260,11 @@ contract IngotSingleTest is TestHelperOz5 {
         erc721mock.mint(userA, 2);
         erc721mock.mint(userA, 3);
         erc721mock.setApprovalForAll(address(ingot), true);
-        uint256[] memory floorIds = new uint256[](3);
-        floorIds[0] = 1;
-        floorIds[1] = 2;
-        floorIds[2] = 3;
+        uint256[][] memory floorIds = new uint256[][](1);
+        floorIds[0] = new uint256[](3);
+        floorIds[0][0] = 1;
+        floorIds[0][1] = 2;
+        floorIds[0][2] = 3;
         ingot.fuse(3, floorIds);
         assertEq(ingot.balanceOf(userA), 3);
         assertEq(ingot.totalSupply(), 3);
@@ -288,25 +291,28 @@ contract IngotSingleTest is TestHelperOz5 {
         erc721mock.mint(userB, 5);
         erc721mock.mint(userB, 6);
         erc721mock.setApprovalForAll(address(ingot), true);
-        uint256[] memory floorIdsB = new uint256[](3);
-        floorIdsB[0] = 4;
-        floorIdsB[1] = 5;
-        floorIdsB[2] = 7;
+        uint256[][] memory floorIdsB = new uint256[][](1);
+        floorIdsB[0] = new uint256[](3);
+        floorIdsB[0][0] = 4;
+        floorIdsB[0][1] = 5;
+        floorIdsB[0][2] = 7;
+
         vm.expectRevert();
         ingot.fuse(3, floorIdsB);
 
-        floorIdsB[2] = 6;
+        floorIdsB[0][2] = 6;
         ingot.fuse(3, floorIdsB);
 
-        floorIdsB[2] = 7;
+        floorIdsB[0][2] = 7;
         vm.expectRevert();
         ingot.dissolve(3, floorIdsB); // [4, 5, 7] is not owned by contract
 
-        uint256[] memory floorIdsBGreedy = new uint256[](4);
-        floorIdsBGreedy[0] = 4;
-        floorIdsBGreedy[1] = 5;
-        floorIdsBGreedy[2] = 6;
-        floorIdsBGreedy[3] = 7;
+        uint256[][] memory floorIdsBGreedy = new uint256[][](1);
+        floorIdsBGreedy[0] = new uint256[](4);
+        floorIdsBGreedy[0][0] = 4;
+        floorIdsBGreedy[0][1] = 5;
+        floorIdsBGreedy[0][2] = 6;
+        floorIdsBGreedy[0][3] = 7;
 
         vm.expectRevert();
         ingot.dissolve(3, floorIdsBGreedy); // [4, 5, 6] is owned by contract
@@ -350,7 +356,7 @@ contract IngotSingleTest is TestHelperOz5 {
         erc721mock.mint(userA, 3);
         erc721mock.setApprovalForAll(address(ingot), true);
 
-        ingot.fuse(1, new uint256[](0));
+        ingot.fuse(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc721mock.ownerOf(1), address(ingot));
@@ -359,7 +365,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(erc721mock.balanceOf(address(ingot)), 3);
         assertEq(erc721mock.balanceOf(userA), 0);
 
-        ingot.dissolve(1, new uint256[](0));
+        ingot.dissolve(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc721mock.ownerOf(1), address(userA));
@@ -376,9 +382,9 @@ contract IngotSingleTest is TestHelperOz5 {
         erc721mock.mint(userB, 6);
         erc721mock.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
-        ingot.fuse(1, new uint256[](0));
+        ingot.fuse(1, emptyFloorIds);
         vm.expectRevert();
-        ingot.dissolve(1, new uint256[](0));
+        ingot.dissolve(1, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -426,7 +432,7 @@ contract IngotSingleTest is TestHelperOz5 {
         erc1155mock.mint(userA, 2, 2);
         erc1155mock.mint(userA, 3, 3);
         erc1155mock.setApprovalForAll(address(ingot), true);
-        ingot.fuse(1, new uint256[](0));
+        ingot.fuse(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc1155mock.balanceOf(address(ingot), 1), 1);
@@ -440,7 +446,7 @@ contract IngotSingleTest is TestHelperOz5 {
         erc1155mock.mint(userA, 2, 20);
         erc1155mock.mint(userA, 3, 30);
 
-        ingot.fuse(10, new uint256[](0));
+        ingot.fuse(10, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 11);
         assertEq(ingot.totalSupply(), 11);
         assertEq(erc1155mock.balanceOf(address(ingot), 1), 11);
@@ -450,7 +456,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(erc1155mock.balanceOf(userA, 2), 0);
         assertEq(erc1155mock.balanceOf(userA, 3), 0);
 
-        ingot.dissolve(11, new uint256[](0));
+        ingot.dissolve(11, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc1155mock.balanceOf(address(ingot), 1), 0);
@@ -468,18 +474,18 @@ contract IngotSingleTest is TestHelperOz5 {
         erc1155mock.mint(userB, 6, 3);
         erc1155mock.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
-        ingot.fuse(1, new uint256[](0));
+        ingot.fuse(1, emptyFloorIds);
         vm.expectRevert();
-        ingot.dissolve(1, new uint256[](0));
+        ingot.dissolve(1, emptyFloorIds);
 
         erc1155mock.mint(userB, 1, 1);
         erc1155mock.mint(userB, 2, 2);
         erc1155mock.mint(userB, 3, 2);
         vm.expectRevert();
-        ingot.fuse(1, new uint256[](0));
+        ingot.fuse(1, emptyFloorIds);
 
         erc1155mock.mint(userB, 3, 1);
         vm.expectRevert();
-        ingot.fuse(2, new uint256[](0));
+        ingot.fuse(2, emptyFloorIds);
     }
 }

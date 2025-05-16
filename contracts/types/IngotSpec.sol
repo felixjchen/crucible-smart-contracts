@@ -27,9 +27,8 @@ library IngotSpecLib {
         uint256 lastNuggetSpecId = 0;
         for (uint256 i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
             _ingotSpec.nuggetSpecs[i].validate();
-
             uint256 ingotSpecId = _ingotSpec.nuggetSpecs[i].getId();
-            require(lastNuggetSpecId < ingotSpecId, "NuggetSpec ids must be ordered");
+            require(lastNuggetSpecId < ingotSpecId, "NuggetSpec ids must be ordered and unique");
             lastNuggetSpecId = ingotSpecId;
         }
     }

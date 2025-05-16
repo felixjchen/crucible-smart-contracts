@@ -23,7 +23,7 @@ contract Crucible is ICrucible, OApp {
 
     IIngot private immutable ingotImplementation;
 
-    mapping(uint256 => address) ingotRegistry;
+    mapping(uint256 => address) public ingotRegistry;
 
     IFeeCalculator public feeCalculator;
     address public feeRecipient;
@@ -50,16 +50,7 @@ contract Crucible is ICrucible, OApp {
 
     function createIngot(IngotSpec calldata _ingotSpec) public returns (address) {
         _ingotSpec.validate();
-        uint256 _ingotId = _ingotSpec.getId();
-        return _createIngot(_ingotId, _ingotSpec);
-    }
-
-    function _takeFee(uint256 amount) internal returns (uint256) {
-        uint256 _fee = feeCalculator.bridge(msg.sender, amount);
-        uint256 _lzFee = msg.value - _fee;
-        (bool ok, ) = feeRecipient.call{ value: _fee }("");
-        require(ok, "feeRecipient transfer failed");
-        return _lzFee;
+        return _createIngot(_ingotSpec.getId(), _ingotSpec);
     }
 
     function sendIngot(
@@ -68,15 +59,16 @@ contract Crucible is ICrucible, OApp {
         IngotSpec calldata _ingotSpec,
         uint256 amount
     ) external payable {
-        uint256 _ingotId = _ingotSpec.getId();
-        address _ingot = ingotRegistry[_ingotId];
+        address _ingot = ingotRegistry[_ingotSpec.getId()];
         require(_ingot != address(0), "Ingot does not exist");
         IIngot(_ingot).crucibleBurn(msg.sender, amount);
 
+        uint256 _fee = feeCalculator.bridge(msg.sender, amount);
+        uint256 _lzFee = msg.value - _fee;
+        (bool ok, ) = feeRecipient.call{ value: _fee }("");
+        require(ok, "feeRecipient transfer failed");
+
         bytes memory _message = abi.encode(_ingotSpec, msg.sender.addressToBytes32(), amount);
-
-        uint256 _lzFee = _takeFee(amount);
-
         endpoint.send{ value: _lzFee }(
             MessagingParams(_dstEid, _getPeerOrRevert(_dstEid), _message, _options, false),
             payable(msg.sender)
