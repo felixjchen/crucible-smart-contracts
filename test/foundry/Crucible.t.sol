@@ -196,7 +196,7 @@ contract CrucibleTest is TestHelperOz5 {
         floorIds[0][2] = 2;
         ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
 
-        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(600_000, 0);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
         MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, ingotSpec, 3);
 
         aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, ingotSpec, 3);
