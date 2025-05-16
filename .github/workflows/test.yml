@@ -1,4 +1,4 @@
-name: Continous Testing
+name: Continuous Testing
 
 on:
   push:
@@ -19,6 +19,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install npm dependencies
+        run: npm install
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
