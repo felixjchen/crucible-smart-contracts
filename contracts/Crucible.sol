@@ -95,6 +95,7 @@ contract Crucible is ICrucible, OApp {
         IIngot(_ingot).crucibleBurn(msg.sender, _amount);
 
         uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
+        require(msg.value >= _fee, "Insufficient fee");
         uint256 _lzFee = msg.value - _fee;
         (bool ok, ) = feeRecipient.call{ value: _fee }("");
         require(ok, "feeRecipient transfer failed");
