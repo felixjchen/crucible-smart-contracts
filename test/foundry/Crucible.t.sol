@@ -196,7 +196,7 @@ contract CrucibleTest is TestHelperOz5 {
         floorIds[0][2] = 2;
         ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
 
-        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(600_000, 0);
         MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, ingotSpec, 3);
 
         aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, ingotSpec, 3);
@@ -212,62 +212,4 @@ contract CrucibleTest is TestHelperOz5 {
 
         assertEq(feeRecipient.balance, 2 * feeAmount);
     }
-
-    // function test_send_oft_compose_msg() public {
-    //     uint256 tokensToSend = 1 ether;
-
-    //     OFTComposerMock composer = new OFTComposerMock();
-
-    //     bytes memory options = OptionsBuilder
-    //         .newOptions()
-    //         .addExecutorLzReceiveOption(200000, 0)
-    //         .addExecutorLzComposeOption(0, 500000, 0);
-    //     bytes memory composeMsg = hex"1234";
-    //     SendParam memory sendParam = SendParam(
-    //         bEid,
-    //         addressToBytes32(address(composer)),
-    //         tokensToSend,
-    //         tokensToSend,
-    //         options,
-    //         composeMsg,
-    //         ""
-    //     );
-    //     MessagingFee memory fee = aCrucible.quoteSend(sendParam, false);
-
-    //     assertEq(aCrucible.balanceOf(userA), initialBalance);
-    //     assertEq(bCrucible.balanceOf(address(composer)), 0);
-
-    //     vm.prank(userA);
-    //     (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt) = aCrucible.send{ value: fee.nativeFee }(
-    //         sendParam,
-    //         fee,
-    //         payable(address(this))
-    //     );
-    //     verifyPackets(bEid, addressToBytes32(address(bCrucible)));
-
-    //     // lzCompose params
-    //     uint32 dstEid_ = bEid;
-    //     address from_ = address(bCrucible);
-    //     bytes memory options_ = options;
-    //     bytes32 guid_ = msgReceipt.guid;
-    //     address to_ = address(composer);
-    //     bytes memory composerMsg_ = OFTComposeMsgCodec.encode(
-    //         msgReceipt.nonce,
-    //         aEid,
-    //         oftReceipt.amountReceivedLD,
-    //         abi.encodePacked(addressToBytes32(userA), composeMsg)
-    //     );
-    //     this.lzCompose(dstEid_, from_, options_, guid_, to_, composerMsg_);
-
-    //     assertEq(aCrucible.balanceOf(userA), initialBalance - tokensToSend);
-    //     assertEq(bCrucible.balanceOf(address(composer)), tokensToSend);
-
-    //     assertEq(composer.from(), from_);
-    //     assertEq(composer.guid(), guid_);
-    //     assertEq(composer.message(), composerMsg_);
-    //     assertEq(composer.executor(), address(this));
-    //     assertEq(composer.extraData(), composerMsg_); // default to setting the extraData to the message as well to test
-    // }
-
-    // TODO import the rest of oft tests?
 }
