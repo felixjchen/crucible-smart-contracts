@@ -82,11 +82,10 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     function _take(uint256 nuggetSpecIndex, uint256 amount) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            // wrap + fee
-            require(
-                msg.value == amount * 10 ** _nuggetSpec.decimals + crucible.feeCalculator().wrap(msg.sender, amount),
-                "Invalid amount"
-            );
+            uint256 _fee = crucible.feeCalculator().wrap(msg.sender, amount);
+            require(msg.value == amount * 10 ** _nuggetSpec.decimals + _fee, "Invalid amount");
+            (bool ok, ) = payable(crucible.feeRecipient()).call{ value: _fee }("");
+            require(ok, "feeRecipient transfer failed");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransferFrom(
                 msg.sender,
@@ -176,7 +175,11 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     // Unwrap
     function dissolve(uint256 amount, uint256[][] calldata floorIds) public payable nonReentrant {
-        require(msg.value == crucible.feeCalculator().unwrap(msg.sender, amount), "Invalid fee");
+        uint256 _fee = crucible.feeCalculator().unwrap(msg.sender, amount);
+        require(msg.value == _fee, "Invalid fee");
+        (bool ok, ) = payable(crucible.feeRecipient()).call{ value: _fee }("");
+        require(ok, "feeRecipient transfer failed");
+
         uint256 j = 0;
         for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
             if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {

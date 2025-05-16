@@ -21,6 +21,15 @@ contract Crucible is ICrucible, OApp {
     using IngotSpecLib for IngotSpec;
     using NuggetSpecLib for NuggetSpec;
 
+    event IngotCreated(address indexed ingot, uint256 indexed ingotId, IngotSpec ingotSpec);
+    event IngotBridged(
+        address indexed ingot,
+        address indexed user,
+        uint256 indexed ingotId,
+        uint256 amount,
+        uint32 dstEid
+    );
+
     IIngot private immutable ingotImplementation;
 
     mapping(uint256 => address) public ingotRegistry;
@@ -45,43 +54,63 @@ contract Crucible is ICrucible, OApp {
         address clone = Clones.clone(address(ingotImplementation));
         IIngot(clone).initialize(ICrucible(address(this)), _ingotId, _ingotSpec);
         ingotRegistry[_ingotId] = clone;
+        emit IngotCreated(clone, _ingotId, _ingotSpec);
         return clone;
     }
 
     function createIngot(IngotSpec calldata _ingotSpec) public returns (address) {
         _ingotSpec.validate();
-        return _createIngot(_ingotSpec.getId(), _ingotSpec);
+        uint256 _ingotId = _ingotSpec.getId();
+        return _createIngot(_ingotId, _ingotSpec);
+    }
+
+    function quoteSendIngot(
+        uint32 _dstEid,
+        bytes calldata _options,
+        IngotSpec calldata _ingotSpec,
+        uint256 _amount
+    ) public view returns (MessagingFee memory) {
+        return
+            endpoint.quote(
+                MessagingParams(
+                    _dstEid,
+                    _getPeerOrRevert(_dstEid),
+                    abi.encode(_ingotSpec, msg.sender.addressToBytes32(), _amount),
+                    _options,
+                    false
+                ),
+                payable(msg.sender)
+            );
     }
 
     function sendIngot(
         uint32 _dstEid,
         bytes calldata _options,
         IngotSpec calldata _ingotSpec,
-        uint256 amount
-    ) external payable {
-        address _ingot = ingotRegistry[_ingotSpec.getId()];
+        uint256 _amount
+    ) public payable {
+        uint256 _ingotId = _ingotSpec.getId();
+        address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot does not exist");
-        IIngot(_ingot).crucibleBurn(msg.sender, amount);
+        IIngot(_ingot).crucibleBurn(msg.sender, _amount);
 
-        uint256 _fee = feeCalculator.bridge(msg.sender, amount);
+        uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
         uint256 _lzFee = msg.value - _fee;
         (bool ok, ) = feeRecipient.call{ value: _fee }("");
         require(ok, "feeRecipient transfer failed");
 
-        bytes memory _message = abi.encode(_ingotSpec, msg.sender.addressToBytes32(), amount);
         endpoint.send{ value: _lzFee }(
-            MessagingParams(_dstEid, _getPeerOrRevert(_dstEid), _message, _options, false),
+            MessagingParams(
+                _dstEid,
+                _getPeerOrRevert(_dstEid),
+                abi.encode(_ingotSpec, msg.sender.addressToBytes32(), _amount),
+                _options,
+                false
+            ),
             payable(msg.sender)
         );
-    }
 
-    function receiveIngot(IngotSpec memory _ingotSpec, address _user, uint256 amount) internal {
-        uint256 _ingotId = _ingotSpec.getId();
-        address _ingot = ingotRegistry[_ingotId];
-        if (_ingot == address(0)) {
-            _ingot = _createIngot(_ingotId, _ingotSpec);
-        }
-        IIngot(_ingot).crucibleMint(_user, amount);
+        emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid);
     }
 
     function _lzReceive(Origin calldata, bytes32, bytes calldata _payload, address, bytes calldata) internal override {
@@ -89,7 +118,12 @@ contract Crucible is ICrucible, OApp {
             _payload,
             (IngotSpec, bytes32, uint256)
         );
-        receiveIngot(_ingotSpec, _bUser.bytes32ToAddress(), _amount);
+        uint256 _ingotId = _ingotSpec.getId();
+        address _ingot = ingotRegistry[_ingotId];
+        if (_ingot == address(0)) {
+            _ingot = _createIngot(_ingotId, _ingotSpec);
+        }
+        IIngot(_ingot).crucibleMint(_bUser.bytes32ToAddress(), _amount);
     }
 
     // Admin
