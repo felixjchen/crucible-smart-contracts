@@ -176,6 +176,43 @@ contract CrucibleTest is TestHelperOz5 {
         assertEq(feeRecipient.balance, 2 * feeAmount);
     }
 
+    function test_sendIngotDoesCreate() public {
+        IngotSpec memory ingotSpec = getIngotSpec();
+        IIngot ingotA = IIngot(aCrucible.createIngot(ingotSpec));
+
+        vm.deal(address(userA), 1 ether);
+        erc721mock.mint(userA, 0);
+        erc721mock.mint(userA, 1);
+        erc721mock.mint(userA, 2);
+
+        vm.startPrank(userA);
+        erc721mock.approve(address(ingotA), 0);
+        erc721mock.approve(address(ingotA), 1);
+        erc721mock.approve(address(ingotA), 2);
+        uint256[][] memory floorIds = new uint256[][](1);
+        floorIds[0] = new uint256[](3);
+        floorIds[0][0] = 0;
+        floorIds[0][1] = 1;
+        floorIds[0][2] = 2;
+        ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
+
+        bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
+        MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, ingotSpec, 3);
+
+        aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, ingotSpec, 3);
+        verifyPackets(bEid, addressToBytes32(address(bCrucible)));
+        IIngot ingotB = IIngot(bCrucible.ingotRegistry(ingotSpec.getId()));
+
+        vm.stopPrank();
+
+        assertEq(ingotA.balanceOf(userA), 0);
+        assertEq(ingotA.totalSupply(), 0);
+        assertEq(ingotB.balanceOf(userA), 3);
+        assertEq(ingotB.totalSupply(), 3);
+
+        assertEq(feeRecipient.balance, 2 * feeAmount);
+    }
+
     // function test_send_oft_compose_msg() public {
     //     uint256 tokensToSend = 1 ether;
 
