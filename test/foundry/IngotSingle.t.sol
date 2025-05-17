@@ -245,7 +245,7 @@ contract IngotSingleTest is TestHelperOz5 {
         uint256 ingotId = nuggetSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
-        assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub");
+        assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub:1");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub");
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
