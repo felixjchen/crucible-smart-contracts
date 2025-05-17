@@ -318,6 +318,75 @@ contract IngotSingleTest is TestHelperOz5 {
         ingot.dissolve(3, floorIdsBGreedy); // [4, 5, 6] is owned by contract
     }
 
+    function test_erc721floor_flooramounts() public {
+        uint256[] memory ids = new uint256[](0);
+        uint256[] memory amounts = new uint256[](0);
+        NuggetSpec memory nuggetSpec = NuggetSpec({
+            collection: address(erc721mock),
+            collectionType: CollectionType.ERC721FLOOR,
+            decimalsOrFloorAmount: 3,
+            ids: ids,
+            amounts: amounts
+        });
+        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        ingotSpec.nuggetSpecs[0] = nuggetSpec;
+
+        uint256 ingotId = nuggetSpec.getId();
+        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+
+        assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub:3");
+        assertEq(ingot.symbol(), "IO MoredCrepePopeClub");
+
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
+        assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721FLOOR));
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 3);
+        assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
+        assertEq(ingot.spec().nuggetSpecs[0].amounts.length, 0);
+
+        // Bunch of success cases
+        vm.startPrank(userA);
+        erc721mock.mint(userA, 1);
+        erc721mock.mint(userA, 2);
+        erc721mock.mint(userA, 3);
+        erc721mock.mint(userA, 4);
+        erc721mock.mint(userA, 5);
+        erc721mock.mint(userA, 6);
+        erc721mock.setApprovalForAll(address(ingot), true);
+        uint256[][] memory floorIds = new uint256[][](1);
+        floorIds[0] = new uint256[](6);
+        floorIds[0][0] = 1;
+        floorIds[0][1] = 2;
+        floorIds[0][2] = 3;
+        floorIds[0][3] = 4;
+        floorIds[0][4] = 5;
+        floorIds[0][5] = 6;
+        ingot.fuse(2, floorIds);
+        assertEq(ingot.balanceOf(userA), 2);
+        assertEq(ingot.totalSupply(), 2);
+        assertEq(erc721mock.ownerOf(1), address(ingot));
+        assertEq(erc721mock.ownerOf(2), address(ingot));
+        assertEq(erc721mock.ownerOf(3), address(ingot));
+        assertEq(erc721mock.ownerOf(4), address(ingot));
+        assertEq(erc721mock.ownerOf(5), address(ingot));
+        assertEq(erc721mock.ownerOf(6), address(ingot));
+        assertEq(erc721mock.balanceOf(address(ingot)), 6);
+        assertEq(erc721mock.balanceOf(userA), 0);
+
+        ingot.dissolve(2, floorIds);
+        assertEq(ingot.balanceOf(userA), 0);
+        assertEq(ingot.totalSupply(), 0);
+        assertEq(erc721mock.ownerOf(1), address(userA));
+        assertEq(erc721mock.ownerOf(2), address(userA));
+        assertEq(erc721mock.ownerOf(3), address(userA));
+        assertEq(erc721mock.ownerOf(4), address(userA));
+        assertEq(erc721mock.ownerOf(5), address(userA));
+        assertEq(erc721mock.ownerOf(6), address(userA));
+        assertEq(erc721mock.balanceOf(userA), 6);
+        assertEq(erc721mock.balanceOf(address(ingot)), 0);
+
+        vm.stopPrank();
+    }
+
     function test_erc721() public {
         uint256[] memory ids = new uint256[](3);
         uint256[] memory amounts = new uint256[](0);

@@ -152,7 +152,7 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     function _giveFloors(uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            require(floorIds.length == amount, "Invalid amount");
+            require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
             for (uint i = 0; i < floorIds.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, floorIds[i]);
             }
