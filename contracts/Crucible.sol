@@ -59,7 +59,6 @@ contract Crucible is ICrucible, OApp {
     }
 
     function createIngot(IngotSpec calldata _ingotSpec) public returns (address) {
-        _ingotSpec.validate();
         uint256 _ingotId = _ingotSpec.getId();
         return _createIngot(_ingotId, _ingotSpec);
     }

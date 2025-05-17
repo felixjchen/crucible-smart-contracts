@@ -64,7 +64,7 @@ contract IngotTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
@@ -104,7 +104,7 @@ contract IngotTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
@@ -130,7 +130,7 @@ contract IngotTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
@@ -160,7 +160,7 @@ contract IngotTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });

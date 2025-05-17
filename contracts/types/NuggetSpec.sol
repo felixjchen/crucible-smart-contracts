@@ -10,18 +10,18 @@ import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 /*
-| Token Type    | collection               | decimals | ids               | amounts                          |
-|---------------|--------------------------|----------|-------------------|----------------------------------|
-| Native        | `== address(0)`          | `>= 0`   | `length == 0`     | `length == 0`                    |
-| ERC20         | `!= address(0)`          | `>= 0`   | `length == 0`     | `length == 0`                    |
-| ERC721FLOOR   | `!= address(0)`          | `== 0`   | `length == 0`     | `length == 0`                    |
-| ERC721        | `!= address(0)`          | `== 0`   | `length > 0`      | `length == 0`                    |
-| ERC1155       | `!= address(0)`          | `== 0`   | `length > 0`      | `length > 0` (== `ids.length`)   |
+| Token Type    | collection            | decimalsOrFloorAmount    | ids               | amounts                           |
+|---------------|-----------------------|--------------------------|-------------------|-----------------------------------|
+| Native        | `== address(0)`       | `>= 0`                   | `length == 0`     | `length == 0`                     |
+| ERC20         | `!= address(0)`       | `>= 0`                   | `length == 0`     | `length == 0`                     |
+| ERC721FLOOR   | `!= address(0)`       | `> 0`                    | `length == 0`     | `length == 0`                     |
+| ERC721        | `!= address(0)`       | `== 0`                   | `length > 0`      | `length == 0`                     |
+| ERC1155       | `!= address(0)`       | `== 0`                   | `length > 0`      | `length > 0` (== `ids.length`)    |
 */
 struct NuggetSpec {
     address collection;
     CollectionType collectionType;
-    uint24 decimals; // TODO: Add Floor amounts
+    uint24 decimalsOrFloorAmount;
     uint256[] ids;
     uint256[] amounts;
 }
@@ -36,12 +36,12 @@ library NuggetSpecLib {
     function validate(NuggetSpec calldata _nugetSpec) public pure {
         if (_nugetSpec.collectionType == CollectionType.NATIVE) {
             require(_nugetSpec.collection == address(0), "NuggetSpec.collection must be zero address for Native");
-            require(_nugetSpec.decimals >= 0, "NuggetSpec.decimals must be >= 0 for Native");
+            require(_nugetSpec.decimalsOrFloorAmount >= 0, "NuggetSpec.decimals must be >= 0 for Native");
             require(_nugetSpec.ids.length == 0, "NuggetSpec.ids must be empty for Native");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for Native");
         } else if (_nugetSpec.collectionType == CollectionType.ERC20) {
             require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC20");
-            require(_nugetSpec.decimals >= 0, "NuggetSpec.decimals must be >= 0 for ERC20");
+            require(_nugetSpec.decimalsOrFloorAmount >= 0, "NuggetSpec.decimals must be >= 0 for ERC20");
             require(_nugetSpec.ids.length == 0, "NuggetSpec.ids must be empty for ERC20");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC20");
         } else if (_nugetSpec.collectionType == CollectionType.ERC721FLOOR) {
@@ -49,17 +49,17 @@ library NuggetSpecLib {
                 _nugetSpec.collection != address(0),
                 "NuggetSpec.collection cannot be zero address for ERC721FLOOR"
             );
-            require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC721FLOOR");
+            require(_nugetSpec.decimalsOrFloorAmount > 0, "NuggetSpec.decimals must be > 0 for ERC721FLOOR");
             require(_nugetSpec.ids.length == 0, "NuggetSpec.ids must be empty for ERC721FLOOR");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721FLOOR");
         } else if (_nugetSpec.collectionType == CollectionType.ERC721) {
             require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC721");
-            require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC721");
+            require(_nugetSpec.decimalsOrFloorAmount == 0, "NuggetSpec.decimals must be 0 for ERC721");
             require(_nugetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC721");
             require(_nugetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721");
         } else if (_nugetSpec.collectionType == CollectionType.ERC1155) {
             require(_nugetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC1155");
-            require(_nugetSpec.decimals == 0, "NuggetSpec.decimals must be 0 for ERC1155");
+            require(_nugetSpec.decimalsOrFloorAmount == 0, "NuggetSpec.decimals must be 0 for ERC1155");
             require(_nugetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC1155");
             require(_nugetSpec.amounts.length > 0, "NuggetSpec.amounts must not be empty for ERC1155");
             require(
@@ -73,14 +73,14 @@ library NuggetSpecLib {
 
     function getNameSuffix(NuggetSpec calldata _nugetSpec) public view returns (string memory) {
         if (_nugetSpec.collectionType == CollectionType.NATIVE) {
-            return string.concat("NATIVE:10^", Strings.toString(uint256(_nugetSpec.decimals)));
+            return string.concat("NATIVE:10^", Strings.toString(uint256(_nugetSpec.decimalsOrFloorAmount)));
         } else if (_nugetSpec.collectionType == CollectionType.ERC20) {
             return
                 string.concat(
                     "ERC20:",
                     ERC20(_nugetSpec.collection).name(),
                     ":10^",
-                    Strings.toString(uint256(_nugetSpec.decimals))
+                    Strings.toString(uint256(_nugetSpec.decimalsOrFloorAmount))
                 );
         } else if (_nugetSpec.collectionType == CollectionType.ERC721FLOOR) {
             string memory name = ERC721(_nugetSpec.collection).name();

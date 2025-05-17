@@ -77,14 +77,14 @@ contract CrucibleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpecA = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: ids,
             amounts: amounts
         });
         NuggetSpec memory nuggetSpecB = NuggetSpec({
             collection: address(erc721mock),
             collectionType: CollectionType.ERC721FLOOR,
-            decimals: 0,
+            decimalsOrFloorAmount: 1,
             ids: ids,
             amounts: amounts
         });

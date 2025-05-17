@@ -44,6 +44,8 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         IngotSpec calldata _ingotSpec
     ) public override initializer {
         require(address(_crucible) != address(0), "Crucible cannot be zero address");
+        _ingotSpec.validate();
+
         crucible = _crucible;
 
         ingotId = _ingotId;
@@ -83,14 +85,14 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
             uint256 _fee = crucible.feeCalculator().wrap(msg.sender, amount);
-            require(msg.value == amount * 10 ** _nuggetSpec.decimals + _fee, "Invalid amount");
+            require(msg.value == amount * 10 ** _nuggetSpec.decimalsOrFloorAmount + _fee, "Invalid amount");
             (bool ok, ) = payable(crucible.feeRecipient()).call{ value: _fee }("");
             require(ok, "feeRecipient transfer failed");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransferFrom(
                 msg.sender,
                 address(this),
-                amount * 10 ** _nuggetSpec.decimals
+                amount * 10 ** _nuggetSpec.decimalsOrFloorAmount
             );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
@@ -114,7 +116,7 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     function _takeFloors(uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            require(floorIds.length == amount, "Invalid amount");
+            require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
             for (uint i = 0; i < floorIds.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(msg.sender, address(this), floorIds[i]);
             }
@@ -124,10 +126,10 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     function _give(uint256 nuggetSpecIndex, uint256 amount) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            (bool success, ) = msg.sender.call{ value: amount * 10 ** _nuggetSpec.decimals }("");
+            (bool success, ) = msg.sender.call{ value: amount * 10 ** _nuggetSpec.decimalsOrFloorAmount }("");
             require(success, "Transfer failed");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
-            IERC20(_nuggetSpec.collection).safeTransfer(msg.sender, amount * 10 ** _nuggetSpec.decimals);
+            IERC20(_nuggetSpec.collection).safeTransfer(msg.sender, amount * 10 ** _nuggetSpec.decimalsOrFloorAmount);
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, _nuggetSpec.ids[i]);

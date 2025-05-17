@@ -62,7 +62,7 @@ contract IngotSingleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
-            decimals: 18,
+            decimalsOrFloorAmount: 18,
             ids: ids,
             amounts: amounts
         });
@@ -77,7 +77,7 @@ contract IngotSingleTest is TestHelperOz5 {
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(0));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.NATIVE));
-        assertEq(ingot.spec().nuggetSpecs[0].decimals, 18);
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 18);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
         assertEq(ingot.spec().nuggetSpecs[0].amounts.length, 0);
 
@@ -117,7 +117,7 @@ contract IngotSingleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: ids,
             amounts: amounts
         });
@@ -132,7 +132,7 @@ contract IngotSingleTest is TestHelperOz5 {
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc20mock));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC20));
-        assertEq(ingot.spec().nuggetSpecs[0].decimals, 0);
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 0);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
         assertEq(ingot.spec().nuggetSpecs[0].amounts.length, 0);
 
@@ -176,7 +176,7 @@ contract IngotSingleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
-            decimals: 18,
+            decimalsOrFloorAmount: 18,
             ids: ids,
             amounts: amounts
         });
@@ -191,7 +191,7 @@ contract IngotSingleTest is TestHelperOz5 {
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc20mock));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC20));
-        assertEq(ingot.spec().nuggetSpecs[0].decimals, 18);
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 18);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
         assertEq(ingot.spec().nuggetSpecs[0].amounts.length, 0);
 
@@ -235,7 +235,7 @@ contract IngotSingleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc721mock),
             collectionType: CollectionType.ERC721FLOOR,
-            decimals: 0,
+            decimalsOrFloorAmount: 1,
             ids: ids,
             amounts: amounts
         });
@@ -250,7 +250,7 @@ contract IngotSingleTest is TestHelperOz5 {
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721FLOOR));
-        assertEq(ingot.spec().nuggetSpecs[0].decimals, 0);
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 1);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
         assertEq(ingot.spec().nuggetSpecs[0].amounts.length, 0);
 
@@ -328,7 +328,7 @@ contract IngotSingleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc721mock),
             collectionType: CollectionType.ERC721,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: ids,
             amounts: amounts
         });
@@ -343,7 +343,7 @@ contract IngotSingleTest is TestHelperOz5 {
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721));
-        assertEq(ingot.spec().nuggetSpecs[0].decimals, 0);
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 0);
         assertEq(ingot.spec().nuggetSpecs[0].ids[0], 1);
         assertEq(ingot.spec().nuggetSpecs[0].ids[1], 2);
         assertEq(ingot.spec().nuggetSpecs[0].ids[2], 3);
@@ -401,7 +401,7 @@ contract IngotSingleTest is TestHelperOz5 {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc1155mock),
             collectionType: CollectionType.ERC1155,
-            decimals: 0,
+            decimalsOrFloorAmount: 0,
             ids: ids,
             amounts: amounts
         });
@@ -418,7 +418,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(ingot.symbol(), symbol);
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc1155mock));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC1155));
-        assertEq(ingot.spec().nuggetSpecs[0].decimals, 0);
+        assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 0);
         assertEq(ingot.spec().nuggetSpecs[0].ids[0], 1);
         assertEq(ingot.spec().nuggetSpecs[0].ids[1], 2);
         assertEq(ingot.spec().nuggetSpecs[0].ids[2], 3);

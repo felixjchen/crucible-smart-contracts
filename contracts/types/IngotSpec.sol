@@ -23,7 +23,7 @@ library IngotSpecLib {
     }
 
     function validate(IngotSpec calldata _ingotSpec) public pure {
-        assert(_ingotSpec.nuggetSpecs.length > 1);
+        assert(_ingotSpec.nuggetSpecs.length >= 1);
         uint256 lastNuggetSpecId = 0;
         for (uint256 i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
             _ingotSpec.nuggetSpecs[i].validate();
