@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
-import { IIngot } from "../../../contracts/interfaces/IIngot.sol";
-import { Ingot } from "../../../contracts/Ingot.sol";
-import { IngotSpec, IngotSpecLib } from "../../../contracts/types/IngotSpec.sol";
-import { NuggetSpec, NuggetSpecLib } from "../../../contracts/types/NuggetSpec.sol";
-import { CollectionType } from "../../../contracts/types/CollectionType.sol";
+import { ICrucible } from "contracts/interfaces/ICrucible.sol";
+import { IIngot } from "contracts/interfaces/IIngot.sol";
+import { Ingot } from "contracts/Ingot.sol";
+import { IngotSpec, IngotSpecLib } from "contracts/types/IngotSpec.sol";
+import { NuggetSpec, NuggetSpecLib } from "contracts/types/NuggetSpec.sol";
+import { CollectionType } from "contracts/types/CollectionType.sol";
 
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { Crucible } from "../../../contracts/Crucible.sol";
-import { NativeFixedFeeCalculator } from "../../../contracts/NativeFixedFeeCalculator.sol";
+import { Crucible } from "contracts/Crucible.sol";
+import { NativeFixedFeeCalculator } from "contracts/NativeFixedFeeCalculator.sol";
 
 // Mock imports
 import { ERC20Mock } from "../mocks/ERC20Mock.sol";

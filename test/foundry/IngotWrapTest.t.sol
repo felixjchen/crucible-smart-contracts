@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
-import { Ingot } from "../../../contracts/Ingot.sol";
-import { IngotSpec, IngotSpecLib } from "../../../contracts/types/IngotSpec.sol";
-import { NuggetSpec, NuggetSpecLib } from "../../../contracts/types/NuggetSpec.sol";
-import { CollectionType } from "../../../contracts/types/CollectionType.sol";
-import { Crucible } from "../../../contracts/Crucible.sol";
-import { NativeFixedFeeCalculator } from "../../../contracts/NativeFixedFeeCalculator.sol";
+import { ICrucible } from "contracts/interfaces/ICrucible.sol";
+import { Ingot } from "contracts/Ingot.sol";
+import { IngotSpec, IngotSpecLib } from "contracts/types/IngotSpec.sol";
+import { NuggetSpec, NuggetSpecLib } from "contracts/types/NuggetSpec.sol";
+import { CollectionType } from "contracts/types/CollectionType.sol";
+import { Crucible } from "contracts/Crucible.sol";
+import { NativeFixedFeeCalculator } from "contracts/NativeFixedFeeCalculator.sol";
 
 // Mock imports
 import { ERC20Mock } from "../mocks/ERC20Mock.sol";
@@ -555,7 +555,7 @@ contract IngotWrapTest is TestHelperOz5 {
 
     function test_many() public {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](5) });
-        ingotSpec.nuggetSpecs[2] = NuggetSpec({
+        ingotSpec.nuggetSpecs[1] = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
             decimalsOrFloorAmount: 18,
@@ -569,7 +569,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: emptyArray,
             amounts: emptyArray
         });
-        ingotSpec.nuggetSpecs[1] = NuggetSpec({
+        ingotSpec.nuggetSpecs[0] = NuggetSpec({
             collection: address(erc721mockA),
             collectionType: CollectionType.ERC721FLOOR,
             decimalsOrFloorAmount: 2,
@@ -579,7 +579,7 @@ contract IngotWrapTest is TestHelperOz5 {
         uint256[] memory ids = new uint256[](2);
         ids[0] = 1;
         ids[1] = 2;
-        ingotSpec.nuggetSpecs[0] = NuggetSpec({
+        ingotSpec.nuggetSpecs[2] = NuggetSpec({
             collection: address(erc721mockB),
             collectionType: CollectionType.ERC721,
             decimalsOrFloorAmount: 0,
@@ -597,11 +597,11 @@ contract IngotWrapTest is TestHelperOz5 {
             amounts: amounts
         });
 
-        // console.log(ingotSpec.nuggetSpecs[0].getId());
-        // console.log(ingotSpec.nuggetSpecs[1].getId());
-        // console.log(ingotSpec.nuggetSpecs[2].getId());
-        // console.log(ingotSpec.nuggetSpecs[3].getId());
-        // console.log(ingotSpec.nuggetSpecs[4].getId());
+        console.log(ingotSpec.nuggetSpecs[0].getId());
+        console.log(ingotSpec.nuggetSpecs[1].getId());
+        console.log(ingotSpec.nuggetSpecs[2].getId());
+        console.log(ingotSpec.nuggetSpecs[3].getId());
+        console.log(ingotSpec.nuggetSpecs[4].getId());
 
         uint256 ingotId = ingotSpec.getId();
 
@@ -610,11 +610,11 @@ contract IngotWrapTest is TestHelperOz5 {
 
         assertEq(
             ingot.name(),
-            "Ingot ERC721:BABUKI:1,2 ERC721:MoredCrepePopeClub:2xFLOOR NATIVE:31337:10^18 ERC20:BRINE:10^6 ERC1155:0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
+            "Ingot ERC721:MoredCrepePopeClub:2xFLOOR NATIVE:31337:10^18 ERC721:BABUKI:1,2 ERC20:BRINE:10^6 ERC1155:0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
         );
         assertEq(
             ingot.symbol(),
-            "IO BABUKI:1,2 MoredCrepePopeClub:2xFLOOR NATIVE:31337 BRINE 0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
+            "IO MoredCrepePopeClub:2xFLOOR NATIVE:31337 BABUKI:1,2 BRINE 0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
         );
 
         vm.startPrank(userA);

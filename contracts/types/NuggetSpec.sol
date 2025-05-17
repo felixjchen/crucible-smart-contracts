@@ -3,10 +3,6 @@ pragma solidity ^0.8.22;
 
 import { CollectionType } from "./CollectionType.sol";
 
-// TODO: Custom interfaces ?
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 /*
@@ -19,11 +15,17 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 | ERC1155       | `!= address(0)`       | `== 0`                   | `length > 0`      | `length > 0` (== `ids.length`)    |
 */
 struct NuggetSpec {
-    address collection;
     CollectionType collectionType;
+    address collection;
     uint24 decimalsOrFloorAmount;
     uint256[] ids;
     uint256[] amounts;
+}
+
+interface NameAndSymbol {
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
 }
 
 library NuggetSpecLib {
@@ -85,16 +87,16 @@ library NuggetSpecLib {
             return
                 string.concat(
                     "ERC20:",
-                    ERC20(_nuggetSpec.collection).name(),
+                    NameAndSymbol(_nuggetSpec.collection).name(),
                     ":10^",
                     Strings.toString(uint256(_nuggetSpec.decimalsOrFloorAmount))
                 );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            string memory name = ERC721(_nuggetSpec.collection).name();
+            string memory name = NameAndSymbol(_nuggetSpec.collection).name();
             name = string.concat("ERC721:", name, ":", _nuggetSpec.decimalsOrFloorAmount.toString(), "xFLOOR");
             return name;
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
-            string memory name = ERC721(_nuggetSpec.collection).name();
+            string memory name = NameAndSymbol(_nuggetSpec.collection).name();
             name = string.concat("ERC721:", name, ":");
             for (uint256 i = 0; i < _nuggetSpec.ids.length - 1; ++i) {
                 name = string.concat(name, _nuggetSpec.ids[i].toString(), ",");
@@ -123,12 +125,12 @@ library NuggetSpecLib {
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
             return string.concat("NATIVE:", block.chainid.toString());
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
-            return ERC20(_nuggetSpec.collection).symbol();
+            return NameAndSymbol(_nuggetSpec.collection).symbol();
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            string memory symbol = ERC721(_nuggetSpec.collection).symbol();
+            string memory symbol = NameAndSymbol(_nuggetSpec.collection).symbol();
             return string.concat(symbol, ":", _nuggetSpec.decimalsOrFloorAmount.toString(), "xFLOOR");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
-            string memory symbol = ERC721(_nuggetSpec.collection).symbol();
+            string memory symbol = NameAndSymbol(_nuggetSpec.collection).symbol();
             symbol = string.concat(symbol, ":");
             for (uint256 i = 0; i < _nuggetSpec.ids.length - 1; ++i) {
                 symbol = string.concat(symbol, _nuggetSpec.ids[i].toString(), ",");

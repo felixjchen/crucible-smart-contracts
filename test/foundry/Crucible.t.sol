@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import { Crucible } from "../../../contracts/Crucible.sol";
-import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
-import { IIngot } from "../../../contracts/interfaces/IIngot.sol";
-import { NativeFixedFeeCalculator } from "../../../contracts/NativeFixedFeeCalculator.sol";
-import { IngotSpec, IngotSpecLib } from "../../../contracts/types/IngotSpec.sol";
-import { NuggetSpec } from "../../../contracts/types/NuggetSpec.sol";
-import { CollectionType } from "../../../contracts/types/CollectionType.sol";
+import { Crucible } from "contracts/Crucible.sol";
+import { ICrucible } from "contracts/interfaces/ICrucible.sol";
+import { IIngot } from "contracts/interfaces/IIngot.sol";
+import { NativeFixedFeeCalculator } from "contracts/NativeFixedFeeCalculator.sol";
+import { IngotSpec, IngotSpecLib } from "contracts/types/IngotSpec.sol";
+import { NuggetSpec } from "contracts/types/NuggetSpec.sol";
+import { CollectionType } from "contracts/types/CollectionType.sol";
 
 // Mock imports
 import { ERC20Mock } from "../mocks/ERC20Mock.sol";
@@ -88,8 +88,8 @@ contract CrucibleTest is TestHelperOz5 {
             ids: ids,
             amounts: amounts
         });
-        ingotSpec.nuggetSpecs[0] = nuggetSpecB;
-        ingotSpec.nuggetSpecs[1] = nuggetSpecA;
+        ingotSpec.nuggetSpecs[0] = nuggetSpecA;
+        ingotSpec.nuggetSpecs[1] = nuggetSpecB;
 
         return ingotSpec;
     }
