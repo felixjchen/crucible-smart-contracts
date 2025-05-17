@@ -6,7 +6,6 @@ import { IFeeCalculator } from "./interfaces/IFeeCalculator.sol";
 import { IIngot } from "./interfaces/IIngot.sol";
 import { Ingot } from "./Ingot.sol";
 import { IngotSpec, IngotSpecLib } from "./types/IngotSpec.sol";
-import { NuggetSpec, NuggetSpecLib } from "./types/NuggetSpec.sol";
 import { CollectionType } from "./types/CollectionType.sol";
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
@@ -19,7 +18,6 @@ contract Crucible is ICrucible, OApp {
     using OFTMsgCodec for bytes32;
     using OFTMsgCodec for address;
     using IngotSpecLib for IngotSpec;
-    using NuggetSpecLib for NuggetSpec;
 
     event IngotCreated(address indexed ingot, uint256 indexed ingotId, IngotSpec ingotSpec);
     event IngotBridged(
@@ -31,7 +29,6 @@ contract Crucible is ICrucible, OApp {
     );
 
     IIngot private immutable ingotImplementation;
-
     mapping(uint256 => address) public ingotRegistry;
 
     IFeeCalculator public feeCalculator;
@@ -59,8 +56,7 @@ contract Crucible is ICrucible, OApp {
     }
 
     function createIngot(IngotSpec calldata _ingotSpec) public returns (address) {
-        uint256 _ingotId = _ingotSpec.getId();
-        return _createIngot(_ingotId, _ingotSpec);
+        return _createIngot(_ingotSpec.getId(), _ingotSpec);
     }
 
     function quoteSendIngot(
