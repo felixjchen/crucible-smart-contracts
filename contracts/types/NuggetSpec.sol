@@ -74,7 +74,13 @@ library NuggetSpecLib {
 
     function getNameSuffix(NuggetSpec calldata _nuggetSpec) public view returns (string memory) {
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            return string.concat("NATIVE:10^", Strings.toString(uint256(_nuggetSpec.decimalsOrFloorAmount)));
+            return
+                string.concat(
+                    "NATIVE:",
+                    block.chainid.toString(),
+                    ":10^",
+                    Strings.toString(uint256(_nuggetSpec.decimalsOrFloorAmount))
+                );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             return
                 string.concat(
@@ -85,7 +91,7 @@ library NuggetSpecLib {
                 );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
             string memory name = ERC721(_nuggetSpec.collection).name();
-            name = string.concat("ERC721FLOOR:", name, ":", _nuggetSpec.decimalsOrFloorAmount.toString());
+            name = string.concat("ERC721:", name, ":", _nuggetSpec.decimalsOrFloorAmount.toString(), "xFLOOR");
             return name;
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             string memory name = ERC721(_nuggetSpec.collection).name();
@@ -115,12 +121,12 @@ library NuggetSpecLib {
 
     function getSymbolSuffix(NuggetSpec memory _nuggetSpec) public view returns (string memory) {
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            return "NATIVE";
+            return string.concat("NATIVE:", block.chainid.toString());
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             return ERC20(_nuggetSpec.collection).symbol();
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
             string memory symbol = ERC721(_nuggetSpec.collection).symbol();
-            return symbol;
+            return string.concat(symbol, ":", _nuggetSpec.decimalsOrFloorAmount.toString(), "xFLOOR");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             string memory symbol = ERC721(_nuggetSpec.collection).symbol();
             symbol = string.concat(symbol, ":");

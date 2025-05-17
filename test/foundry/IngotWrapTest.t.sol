@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import { ICrucible } from "../../../contracts/interfaces/ICrucible.sol";
 import { Ingot } from "../../../contracts/Ingot.sol";
-import { IngotSpec } from "../../../contracts/types/IngotSpec.sol";
+import { IngotSpec, IngotSpecLib } from "../../../contracts/types/IngotSpec.sol";
 import { NuggetSpec, NuggetSpecLib } from "../../../contracts/types/NuggetSpec.sol";
 import { CollectionType } from "../../../contracts/types/CollectionType.sol";
 import { Crucible } from "../../../contracts/Crucible.sol";
@@ -19,7 +19,8 @@ import "forge-std/console.sol";
 import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-contract IngotSingleTest is TestHelperOz5 {
+contract IngotWrapTest is TestHelperOz5 {
+    using IngotSpecLib for IngotSpec;
     using NuggetSpecLib for NuggetSpec;
 
     address private owner = makeAddr("owner");
@@ -34,8 +35,12 @@ contract IngotSingleTest is TestHelperOz5 {
     ERC20Mock private erc20mockA;
     ERC721Mock private erc721mockA;
     ERC1155Mock private erc1155mockA;
+    ERC20Mock private erc20mockB;
+    ERC721Mock private erc721mockB;
+    ERC1155Mock private erc1155mockB;
 
     uint256[][] emptyFloorIds;
+    uint256[] emptyArray;
 
     function setUp() public virtual override {
         super.setUp();
@@ -53,26 +58,28 @@ contract IngotSingleTest is TestHelperOz5 {
         erc20mockA = new ERC20Mock("BRINE", "BRINE");
         erc721mockA = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
         erc1155mockA = new ERC1155Mock("PurpleBeta", "PurpleBeta");
+
+        erc20mockB = new ERC20Mock("USBC", "USBC");
+        erc721mockB = new ERC721Mock("BABUKI", "BABUKI");
+        erc1155mockB = new ERC1155Mock("PurpleFall", "PurpleFall");
     }
 
     function test_native() public {
-        uint256[] memory ids = new uint256[](0);
-        uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
             decimalsOrFloorAmount: 18,
-            ids: ids,
-            amounts: amounts
+            ids: emptyArray,
+            amounts: emptyArray
         });
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
-        assertEq(ingot.name(), "Ingot NATIVE:10^18");
-        assertEq(ingot.symbol(), "IO NATIVE");
+        assertEq(ingot.name(), "Ingot NATIVE:31337:10^18");
+        assertEq(ingot.symbol(), "IO NATIVE:31337");
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(0));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.NATIVE));
@@ -109,19 +116,17 @@ contract IngotSingleTest is TestHelperOz5 {
     }
 
     function test_erc20() public {
-        uint256[] memory ids = new uint256[](0);
-        uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mockA),
             collectionType: CollectionType.ERC20,
             decimalsOrFloorAmount: 0,
-            ids: ids,
-            amounts: amounts
+            ids: emptyArray,
+            amounts: emptyArray
         });
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^0");
@@ -168,19 +173,17 @@ contract IngotSingleTest is TestHelperOz5 {
     }
 
     function test_erc20_decimals() public {
-        uint256[] memory ids = new uint256[](0);
-        uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mockA),
             collectionType: CollectionType.ERC20,
             decimalsOrFloorAmount: 18,
-            ids: ids,
-            amounts: amounts
+            ids: emptyArray,
+            amounts: emptyArray
         });
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^18");
@@ -227,23 +230,21 @@ contract IngotSingleTest is TestHelperOz5 {
     }
 
     function test_erc721floor() public {
-        uint256[] memory ids = new uint256[](0);
-        uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc721mockA),
             collectionType: CollectionType.ERC721FLOOR,
             decimalsOrFloorAmount: 1,
-            ids: ids,
-            amounts: amounts
+            ids: emptyArray,
+            amounts: emptyArray
         });
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
-        assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub:1");
-        assertEq(ingot.symbol(), "IO MoredCrepePopeClub");
+        assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1xFLOOR");
+        assertEq(ingot.symbol(), "IO MoredCrepePopeClub:1xFLOOR");
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721FLOOR));
@@ -316,23 +317,21 @@ contract IngotSingleTest is TestHelperOz5 {
     }
 
     function test_erc721floor_flooramounts() public {
-        uint256[] memory ids = new uint256[](0);
-        uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc721mockA),
             collectionType: CollectionType.ERC721FLOOR,
             decimalsOrFloorAmount: 3,
-            ids: ids,
-            amounts: amounts
+            ids: emptyArray,
+            amounts: emptyArray
         });
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
-        assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub:3");
-        assertEq(ingot.symbol(), "IO MoredCrepePopeClub");
+        assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:3xFLOOR");
+        assertEq(ingot.symbol(), "IO MoredCrepePopeClub:3xFLOOR");
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721FLOOR));
@@ -386,7 +385,6 @@ contract IngotSingleTest is TestHelperOz5 {
 
     function test_erc721() public {
         uint256[] memory ids = new uint256[](3);
-        uint256[] memory amounts = new uint256[](0);
         ids[0] = 1;
         ids[1] = 2;
         ids[2] = 3;
@@ -396,12 +394,12 @@ contract IngotSingleTest is TestHelperOz5 {
             collectionType: CollectionType.ERC721,
             decimalsOrFloorAmount: 0,
             ids: ids,
-            amounts: amounts
+            amounts: emptyArray
         });
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1,2,3");
@@ -474,7 +472,7 @@ contract IngotSingleTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = nuggetSpec.getId();
+        uint256 ingotId = ingotSpec.getId();
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
         string memory collection_string = Strings.toHexString(uint256(uint160(nuggetSpec.collection)), 20);
@@ -553,5 +551,95 @@ contract IngotSingleTest is TestHelperOz5 {
         erc1155mockA.mint(userB, 3, 1);
         vm.expectRevert();
         ingot.fuse(2, emptyFloorIds);
+    }
+
+    function test_many() public {
+        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](5) });
+        ingotSpec.nuggetSpecs[2] = NuggetSpec({
+            collection: address(0),
+            collectionType: CollectionType.NATIVE,
+            decimalsOrFloorAmount: 18,
+            ids: emptyArray,
+            amounts: emptyArray
+        });
+        ingotSpec.nuggetSpecs[3] = NuggetSpec({
+            collection: address(erc20mockA),
+            collectionType: CollectionType.ERC20,
+            decimalsOrFloorAmount: 6,
+            ids: emptyArray,
+            amounts: emptyArray
+        });
+        ingotSpec.nuggetSpecs[1] = NuggetSpec({
+            collection: address(erc721mockA),
+            collectionType: CollectionType.ERC721FLOOR,
+            decimalsOrFloorAmount: 2,
+            ids: emptyArray,
+            amounts: emptyArray
+        });
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+        ingotSpec.nuggetSpecs[0] = NuggetSpec({
+            collection: address(erc721mockB),
+            collectionType: CollectionType.ERC721,
+            decimalsOrFloorAmount: 0,
+            ids: ids,
+            amounts: emptyArray
+        });
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 3;
+        amounts[1] = 4;
+        ingotSpec.nuggetSpecs[4] = NuggetSpec({
+            collection: address(erc1155mockA),
+            collectionType: CollectionType.ERC1155,
+            decimalsOrFloorAmount: 0,
+            ids: ids,
+            amounts: amounts
+        });
+
+        // console.log(ingotSpec.nuggetSpecs[0].getId());
+        // console.log(ingotSpec.nuggetSpecs[1].getId());
+        // console.log(ingotSpec.nuggetSpecs[2].getId());
+        // console.log(ingotSpec.nuggetSpecs[3].getId());
+        // console.log(ingotSpec.nuggetSpecs[4].getId());
+
+        uint256 ingotId = ingotSpec.getId();
+
+        // 1 ingot = 1 ether + 10**18 ERC20 + 2 ERC721FLOOR + ERC721:1,2 + ERC1155:1x3,2x4
+        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+
+        assertEq(
+            ingot.name(),
+            "Ingot ERC721:BABUKI:1,2 ERC721:MoredCrepePopeClub:2xFLOOR NATIVE:31337:10^18 ERC20:BRINE:10^6 ERC1155:0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
+        );
+        assertEq(
+            ingot.symbol(),
+            "IO BABUKI:1,2 MoredCrepePopeClub:2xFLOOR NATIVE:31337 BRINE 0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
+        );
+
+        vm.startPrank(userA);
+        vm.deal(userA, 1 ether);
+        erc20mockA.mint(userA, 10 ** 18);
+        erc20mockA.approve(address(ingot), 10 ** 18);
+        erc721mockA.mint(userA, 1);
+        erc721mockA.mint(userA, 2);
+        erc721mockA.setApprovalForAll(address(ingot), true);
+        erc721mockB.mint(userA, 1);
+        erc721mockB.mint(userA, 2);
+        erc721mockB.setApprovalForAll(address(ingot), true);
+        erc1155mockA.mint(userA, 1, 3);
+        erc1155mockA.mint(userA, 2, 4);
+        erc1155mockA.setApprovalForAll(address(ingot), true);
+        uint256[][] memory floorIds = new uint256[][](1);
+        floorIds[0] = new uint256[](2);
+        floorIds[0][0] = 1;
+        floorIds[0][1] = 2;
+
+        ingot.fuse{ value: 1 ether }(1, floorIds);
+
+        assertEq(ingot.balanceOf(userA), 1);
+        assertEq(ingot.totalSupply(), 1);
+
+        vm.stopPrank();
     }
 }

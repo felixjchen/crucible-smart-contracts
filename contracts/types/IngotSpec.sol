@@ -23,12 +23,12 @@ library IngotSpecLib {
     }
 
     function validate(IngotSpec calldata _ingotSpec) public pure {
-        assert(_ingotSpec.nuggetSpecs.length >= 1);
+        require(_ingotSpec.nuggetSpecs.length >= 1, "IngotSpec.nuggetSpecs must not be empty");
         uint256 lastNuggetSpecId = 0;
         for (uint256 i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
             _ingotSpec.nuggetSpecs[i].validate();
             uint256 ingotSpecId = _ingotSpec.nuggetSpecs[i].getId();
-            require(lastNuggetSpecId < ingotSpecId, "NuggetSpec ids must be ordered and unique");
+            require(lastNuggetSpecId < ingotSpecId, "IngotSpec.nuggetSpecs ids must be ordered and unique");
             lastNuggetSpecId = ingotSpecId;
         }
     }
