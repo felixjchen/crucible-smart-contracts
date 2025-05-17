@@ -32,6 +32,7 @@ library NuggetSpecLib {
     using Strings for uint256;
     using Strings for uint24;
 
+    // TODO: I dont really like this
     function getId(NuggetSpec memory _nuggetSpec) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(_nuggetSpec)));
     }
@@ -39,12 +40,12 @@ library NuggetSpecLib {
     function validate(NuggetSpec calldata _nuggetSpec) public pure {
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
             require(_nuggetSpec.collection == address(0), "NuggetSpec.collection must be zero address for Native");
-            require(_nuggetSpec.decimalsOrFloorAmount >= 0, "NuggetSpec.decimals must be >= 0 for Native");
+            require(_nuggetSpec.decimalsOrFloorAmount >= 0, "NuggetSpec.decimalsOrFloorAmount must be >= 0 for Native");
             require(_nuggetSpec.ids.length == 0, "NuggetSpec.ids must be empty for Native");
             require(_nuggetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for Native");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             require(_nuggetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC20");
-            require(_nuggetSpec.decimalsOrFloorAmount >= 0, "NuggetSpec.decimals must be >= 0 for ERC20");
+            require(_nuggetSpec.decimalsOrFloorAmount >= 0, "NuggetSpec.decimalsOrFloorAmount must be >= 0 for ERC20");
             require(_nuggetSpec.ids.length == 0, "NuggetSpec.ids must be empty for ERC20");
             require(_nuggetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC20");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
@@ -52,17 +53,20 @@ library NuggetSpecLib {
                 _nuggetSpec.collection != address(0),
                 "NuggetSpec.collection cannot be zero address for ERC721FLOOR"
             );
-            require(_nuggetSpec.decimalsOrFloorAmount > 0, "NuggetSpec.decimals must be > 0 for ERC721FLOOR");
+            require(
+                _nuggetSpec.decimalsOrFloorAmount > 0,
+                "NuggetSpec.decimalsOrFloorAmount must be > 0 for ERC721FLOOR"
+            );
             require(_nuggetSpec.ids.length == 0, "NuggetSpec.ids must be empty for ERC721FLOOR");
             require(_nuggetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721FLOOR");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             require(_nuggetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC721");
-            require(_nuggetSpec.decimalsOrFloorAmount == 0, "NuggetSpec.decimals must be 0 for ERC721");
+            require(_nuggetSpec.decimalsOrFloorAmount == 0, "NuggetSpec.decimalsOrFloorAmount must be 0 for ERC721");
             require(_nuggetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC721");
             require(_nuggetSpec.amounts.length == 0, "NuggetSpec.amounts must be empty for ERC721");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC1155) {
             require(_nuggetSpec.collection != address(0), "NuggetSpec.collection cannot be zero address for ERC1155");
-            require(_nuggetSpec.decimalsOrFloorAmount == 0, "NuggetSpec.decimals must be 0 for ERC1155");
+            require(_nuggetSpec.decimalsOrFloorAmount == 0, "NuggetSpec.decimalsOrFloorAmount must be 0 for ERC1155");
             require(_nuggetSpec.ids.length > 0, "NuggetSpec.ids must not be empty for ERC1155");
             require(_nuggetSpec.amounts.length > 0, "NuggetSpec.amounts must not be empty for ERC1155");
             require(
