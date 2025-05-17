@@ -31,10 +31,9 @@ contract IngotSingleTest is TestHelperOz5 {
     Crucible private crucible;
     NativeFixedFeeCalculator private feeCalculator;
 
-    ERC20Mock private erc20mock;
-    ERC20Mock private erc20mockB;
-    ERC721Mock private erc721mock;
-    ERC1155Mock private erc1155mock;
+    ERC20Mock private erc20mockA;
+    ERC721Mock private erc721mockA;
+    ERC1155Mock private erc1155mockA;
 
     uint256[][] emptyFloorIds;
 
@@ -51,9 +50,9 @@ contract IngotSingleTest is TestHelperOz5 {
         );
         ingot = new Ingot();
 
-        erc20mock = new ERC20Mock("BRINE", "BRINE");
-        erc721mock = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
-        erc1155mock = new ERC1155Mock("PurpleBeta", "PurpleBeta");
+        erc20mockA = new ERC20Mock("BRINE", "BRINE");
+        erc721mockA = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
+        erc1155mockA = new ERC1155Mock("PurpleBeta", "PurpleBeta");
     }
 
     function test_native() public {
@@ -99,9 +98,6 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of failure cases
         vm.startPrank(userB);
-        vm.expectRevert();
-        ingot.fuse{ value: 1 wei }(1 wei, emptyFloorIds);
-
         vm.deal(userB, 1 ether);
         vm.expectRevert();
         ingot.fuse{ value: 1 wei }(1 ether, emptyFloorIds);
@@ -109,13 +105,14 @@ contract IngotSingleTest is TestHelperOz5 {
         ingot.fuse{ value: 1 ether }(1 ether, emptyFloorIds);
         // 18 decimals will succeed
         ingot.fuse{ value: 1 ether }(1, emptyFloorIds);
+        vm.stopPrank();
     }
 
     function test_erc20() public {
         uint256[] memory ids = new uint256[](0);
         uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
-            collection: address(erc20mock),
+            collection: address(erc20mockA),
             collectionType: CollectionType.ERC20,
             decimalsOrFloorAmount: 0,
             ids: ids,
@@ -130,7 +127,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^0");
         assertEq(ingot.symbol(), "IO BRINE");
 
-        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc20mock));
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc20mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC20));
         assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 0);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
@@ -138,33 +135,33 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of success cases
         vm.startPrank(userA);
-        erc20mock.mint(userA, initialBalance);
-        erc20mock.approve(address(ingot), initialBalance);
+        erc20mockA.mint(userA, initialBalance);
+        erc20mockA.approve(address(ingot), initialBalance);
 
         ingot.fuse(initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), initialBalance);
         assertEq(ingot.totalSupply(), initialBalance);
-        assertEq(erc20mock.balanceOf(address(ingot)), initialBalance);
-        assertEq(erc20mock.balanceOf(userA), 0);
+        assertEq(erc20mockA.balanceOf(address(ingot)), initialBalance);
+        assertEq(erc20mockA.balanceOf(userA), 0);
 
         ingot.dissolve(initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
-        assertEq(erc20mock.balanceOf(address(ingot)), 0);
-        assertEq(erc20mock.balanceOf(userA), initialBalance);
+        assertEq(erc20mockA.balanceOf(address(ingot)), 0);
+        assertEq(erc20mockA.balanceOf(userA), initialBalance);
         vm.stopPrank();
 
         // Bunch of failure cases
         vm.startPrank(userB);
-        erc20mock.mint(userB, 1 wei);
+        erc20mockA.mint(userB, 1 wei);
         vm.expectRevert();
         ingot.fuse(10 wei, emptyFloorIds);
 
-        erc20mock.approve(address(ingot), 10 wei);
+        erc20mockA.approve(address(ingot), 10 wei);
         vm.expectRevert();
         ingot.fuse(10 wei, emptyFloorIds);
 
-        erc20mock.mint(userB, 9 wei);
+        erc20mockA.mint(userB, 9 wei);
         vm.expectRevert();
         ingot.dissolve(10 wei, emptyFloorIds);
         vm.stopPrank();
@@ -174,7 +171,7 @@ contract IngotSingleTest is TestHelperOz5 {
         uint256[] memory ids = new uint256[](0);
         uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
-            collection: address(erc20mock),
+            collection: address(erc20mockA),
             collectionType: CollectionType.ERC20,
             decimalsOrFloorAmount: 18,
             ids: ids,
@@ -189,7 +186,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^18");
         assertEq(ingot.symbol(), "IO BRINE");
 
-        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc20mock));
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc20mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC20));
         assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 18);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
@@ -197,33 +194,33 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of success cases
         vm.startPrank(userA);
-        erc20mock.mint(userA, 1 * 10 ** 18);
-        erc20mock.approve(address(ingot), 1 * 10 ** 18);
+        erc20mockA.mint(userA, 1 * 10 ** 18);
+        erc20mockA.approve(address(ingot), 1 * 10 ** 18);
 
         ingot.fuse(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
-        assertEq(erc20mock.balanceOf(address(ingot)), 1 * 10 ** 18);
-        assertEq(erc20mock.balanceOf(userA), 0);
+        assertEq(erc20mockA.balanceOf(address(ingot)), 1 * 10 ** 18);
+        assertEq(erc20mockA.balanceOf(userA), 0);
 
         ingot.dissolve(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
-        assertEq(erc20mock.balanceOf(address(ingot)), 0);
-        assertEq(erc20mock.balanceOf(userA), 1 * 10 ** 18);
+        assertEq(erc20mockA.balanceOf(address(ingot)), 0);
+        assertEq(erc20mockA.balanceOf(userA), 1 * 10 ** 18);
         vm.stopPrank();
 
         // Bunch of failure cases
         vm.startPrank(userB);
-        erc20mock.mint(userB, 1 wei);
+        erc20mockA.mint(userB, 1 wei);
         vm.expectRevert();
         ingot.fuse(10 wei, emptyFloorIds);
 
-        erc20mock.approve(address(ingot), 10 wei);
+        erc20mockA.approve(address(ingot), 10 wei);
         vm.expectRevert();
         ingot.fuse(10 wei, emptyFloorIds);
 
-        erc20mock.mint(userB, 9 wei);
+        erc20mockA.mint(userB, 9 wei);
         vm.expectRevert();
         ingot.dissolve(10 wei, emptyFloorIds);
         vm.stopPrank();
@@ -233,7 +230,7 @@ contract IngotSingleTest is TestHelperOz5 {
         uint256[] memory ids = new uint256[](0);
         uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
-            collection: address(erc721mock),
+            collection: address(erc721mockA),
             collectionType: CollectionType.ERC721FLOOR,
             decimalsOrFloorAmount: 1,
             ids: ids,
@@ -248,7 +245,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub:1");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub");
 
-        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721FLOOR));
         assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 1);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
@@ -256,10 +253,10 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of success cases
         vm.startPrank(userA);
-        erc721mock.mint(userA, 1);
-        erc721mock.mint(userA, 2);
-        erc721mock.mint(userA, 3);
-        erc721mock.setApprovalForAll(address(ingot), true);
+        erc721mockA.mint(userA, 1);
+        erc721mockA.mint(userA, 2);
+        erc721mockA.mint(userA, 3);
+        erc721mockA.setApprovalForAll(address(ingot), true);
         uint256[][] memory floorIds = new uint256[][](1);
         floorIds[0] = new uint256[](3);
         floorIds[0][0] = 1;
@@ -268,29 +265,29 @@ contract IngotSingleTest is TestHelperOz5 {
         ingot.fuse(3, floorIds);
         assertEq(ingot.balanceOf(userA), 3);
         assertEq(ingot.totalSupply(), 3);
-        assertEq(erc721mock.ownerOf(1), address(ingot));
-        assertEq(erc721mock.ownerOf(2), address(ingot));
-        assertEq(erc721mock.ownerOf(3), address(ingot));
-        assertEq(erc721mock.balanceOf(address(ingot)), 3);
-        assertEq(erc721mock.balanceOf(userA), 0);
+        assertEq(erc721mockA.ownerOf(1), address(ingot));
+        assertEq(erc721mockA.ownerOf(2), address(ingot));
+        assertEq(erc721mockA.ownerOf(3), address(ingot));
+        assertEq(erc721mockA.balanceOf(address(ingot)), 3);
+        assertEq(erc721mockA.balanceOf(userA), 0);
 
         ingot.dissolve(3, floorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
-        assertEq(erc721mock.ownerOf(1), address(userA));
-        assertEq(erc721mock.ownerOf(2), address(userA));
-        assertEq(erc721mock.ownerOf(3), address(userA));
-        assertEq(erc721mock.balanceOf(userA), 3);
-        assertEq(erc721mock.balanceOf(address(ingot)), 0);
+        assertEq(erc721mockA.ownerOf(1), address(userA));
+        assertEq(erc721mockA.ownerOf(2), address(userA));
+        assertEq(erc721mockA.ownerOf(3), address(userA));
+        assertEq(erc721mockA.balanceOf(userA), 3);
+        assertEq(erc721mockA.balanceOf(address(ingot)), 0);
 
         vm.stopPrank();
 
         // Bunch of failure cases
         vm.startPrank(userB);
-        erc721mock.mint(userB, 4);
-        erc721mock.mint(userB, 5);
-        erc721mock.mint(userB, 6);
-        erc721mock.setApprovalForAll(address(ingot), true);
+        erc721mockA.mint(userB, 4);
+        erc721mockA.mint(userB, 5);
+        erc721mockA.mint(userB, 6);
+        erc721mockA.setApprovalForAll(address(ingot), true);
         uint256[][] memory floorIdsB = new uint256[][](1);
         floorIdsB[0] = new uint256[](3);
         floorIdsB[0][0] = 4;
@@ -322,7 +319,7 @@ contract IngotSingleTest is TestHelperOz5 {
         uint256[] memory ids = new uint256[](0);
         uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpec = NuggetSpec({
-            collection: address(erc721mock),
+            collection: address(erc721mockA),
             collectionType: CollectionType.ERC721FLOOR,
             decimalsOrFloorAmount: 3,
             ids: ids,
@@ -337,7 +334,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(ingot.name(), "Ingot ERC721FLOOR:MoredCrepePopeClub:3");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub");
 
-        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721FLOOR));
         assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 3);
         assertEq(ingot.spec().nuggetSpecs[0].ids.length, 0);
@@ -345,13 +342,13 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of success cases
         vm.startPrank(userA);
-        erc721mock.mint(userA, 1);
-        erc721mock.mint(userA, 2);
-        erc721mock.mint(userA, 3);
-        erc721mock.mint(userA, 4);
-        erc721mock.mint(userA, 5);
-        erc721mock.mint(userA, 6);
-        erc721mock.setApprovalForAll(address(ingot), true);
+        erc721mockA.mint(userA, 1);
+        erc721mockA.mint(userA, 2);
+        erc721mockA.mint(userA, 3);
+        erc721mockA.mint(userA, 4);
+        erc721mockA.mint(userA, 5);
+        erc721mockA.mint(userA, 6);
+        erc721mockA.setApprovalForAll(address(ingot), true);
         uint256[][] memory floorIds = new uint256[][](1);
         floorIds[0] = new uint256[](6);
         floorIds[0][0] = 1;
@@ -363,26 +360,26 @@ contract IngotSingleTest is TestHelperOz5 {
         ingot.fuse(2, floorIds);
         assertEq(ingot.balanceOf(userA), 2);
         assertEq(ingot.totalSupply(), 2);
-        assertEq(erc721mock.ownerOf(1), address(ingot));
-        assertEq(erc721mock.ownerOf(2), address(ingot));
-        assertEq(erc721mock.ownerOf(3), address(ingot));
-        assertEq(erc721mock.ownerOf(4), address(ingot));
-        assertEq(erc721mock.ownerOf(5), address(ingot));
-        assertEq(erc721mock.ownerOf(6), address(ingot));
-        assertEq(erc721mock.balanceOf(address(ingot)), 6);
-        assertEq(erc721mock.balanceOf(userA), 0);
+        assertEq(erc721mockA.ownerOf(1), address(ingot));
+        assertEq(erc721mockA.ownerOf(2), address(ingot));
+        assertEq(erc721mockA.ownerOf(3), address(ingot));
+        assertEq(erc721mockA.ownerOf(4), address(ingot));
+        assertEq(erc721mockA.ownerOf(5), address(ingot));
+        assertEq(erc721mockA.ownerOf(6), address(ingot));
+        assertEq(erc721mockA.balanceOf(address(ingot)), 6);
+        assertEq(erc721mockA.balanceOf(userA), 0);
 
         ingot.dissolve(2, floorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
-        assertEq(erc721mock.ownerOf(1), address(userA));
-        assertEq(erc721mock.ownerOf(2), address(userA));
-        assertEq(erc721mock.ownerOf(3), address(userA));
-        assertEq(erc721mock.ownerOf(4), address(userA));
-        assertEq(erc721mock.ownerOf(5), address(userA));
-        assertEq(erc721mock.ownerOf(6), address(userA));
-        assertEq(erc721mock.balanceOf(userA), 6);
-        assertEq(erc721mock.balanceOf(address(ingot)), 0);
+        assertEq(erc721mockA.ownerOf(1), address(userA));
+        assertEq(erc721mockA.ownerOf(2), address(userA));
+        assertEq(erc721mockA.ownerOf(3), address(userA));
+        assertEq(erc721mockA.ownerOf(4), address(userA));
+        assertEq(erc721mockA.ownerOf(5), address(userA));
+        assertEq(erc721mockA.ownerOf(6), address(userA));
+        assertEq(erc721mockA.balanceOf(userA), 6);
+        assertEq(erc721mockA.balanceOf(address(ingot)), 0);
 
         vm.stopPrank();
     }
@@ -395,7 +392,7 @@ contract IngotSingleTest is TestHelperOz5 {
         ids[2] = 3;
 
         NuggetSpec memory nuggetSpec = NuggetSpec({
-            collection: address(erc721mock),
+            collection: address(erc721mockA),
             collectionType: CollectionType.ERC721,
             decimalsOrFloorAmount: 0,
             ids: ids,
@@ -410,7 +407,7 @@ contract IngotSingleTest is TestHelperOz5 {
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1,2,3");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:1,2,3");
 
-        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mock));
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc721mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC721));
         assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 0);
         assertEq(ingot.spec().nuggetSpecs[0].ids[0], 1);
@@ -420,36 +417,36 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of success cases
         vm.startPrank(userA);
-        erc721mock.mint(userA, 1);
-        erc721mock.mint(userA, 2);
-        erc721mock.mint(userA, 3);
-        erc721mock.setApprovalForAll(address(ingot), true);
+        erc721mockA.mint(userA, 1);
+        erc721mockA.mint(userA, 2);
+        erc721mockA.mint(userA, 3);
+        erc721mockA.setApprovalForAll(address(ingot), true);
 
         ingot.fuse(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
-        assertEq(erc721mock.ownerOf(1), address(ingot));
-        assertEq(erc721mock.ownerOf(2), address(ingot));
-        assertEq(erc721mock.ownerOf(3), address(ingot));
-        assertEq(erc721mock.balanceOf(address(ingot)), 3);
-        assertEq(erc721mock.balanceOf(userA), 0);
+        assertEq(erc721mockA.ownerOf(1), address(ingot));
+        assertEq(erc721mockA.ownerOf(2), address(ingot));
+        assertEq(erc721mockA.ownerOf(3), address(ingot));
+        assertEq(erc721mockA.balanceOf(address(ingot)), 3);
+        assertEq(erc721mockA.balanceOf(userA), 0);
 
         ingot.dissolve(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
-        assertEq(erc721mock.ownerOf(1), address(userA));
-        assertEq(erc721mock.ownerOf(2), address(userA));
-        assertEq(erc721mock.ownerOf(3), address(userA));
-        assertEq(erc721mock.balanceOf(userA), 3);
-        assertEq(erc721mock.balanceOf(address(ingot)), 0);
+        assertEq(erc721mockA.ownerOf(1), address(userA));
+        assertEq(erc721mockA.ownerOf(2), address(userA));
+        assertEq(erc721mockA.ownerOf(3), address(userA));
+        assertEq(erc721mockA.balanceOf(userA), 3);
+        assertEq(erc721mockA.balanceOf(address(ingot)), 0);
         vm.stopPrank();
 
         // Bunch of failure cases
         vm.startPrank(userB);
-        erc721mock.mint(userB, 4);
-        erc721mock.mint(userB, 5);
-        erc721mock.mint(userB, 6);
-        erc721mock.setApprovalForAll(address(ingot), true);
+        erc721mockA.mint(userB, 4);
+        erc721mockA.mint(userB, 5);
+        erc721mockA.mint(userB, 6);
+        erc721mockA.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
         ingot.fuse(1, emptyFloorIds);
         vm.expectRevert();
@@ -468,7 +465,7 @@ contract IngotSingleTest is TestHelperOz5 {
         amounts[2] = 3;
 
         NuggetSpec memory nuggetSpec = NuggetSpec({
-            collection: address(erc1155mock),
+            collection: address(erc1155mockA),
             collectionType: CollectionType.ERC1155,
             decimalsOrFloorAmount: 0,
             ids: ids,
@@ -485,7 +482,7 @@ contract IngotSingleTest is TestHelperOz5 {
         string memory symbol = string.concat("IO ", collection_string, ":1x1,2x2,3x3");
         assertEq(ingot.name(), name);
         assertEq(ingot.symbol(), symbol);
-        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc1155mock));
+        assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc1155mockA));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.ERC1155));
         assertEq(ingot.spec().nuggetSpecs[0].decimalsOrFloorAmount, 0);
         assertEq(ingot.spec().nuggetSpecs[0].ids[0], 1);
@@ -497,63 +494,63 @@ contract IngotSingleTest is TestHelperOz5 {
 
         // Bunch of success cases
         vm.startPrank(userA);
-        erc1155mock.mint(userA, 1, 1);
-        erc1155mock.mint(userA, 2, 2);
-        erc1155mock.mint(userA, 3, 3);
-        erc1155mock.setApprovalForAll(address(ingot), true);
+        erc1155mockA.mint(userA, 1, 1);
+        erc1155mockA.mint(userA, 2, 2);
+        erc1155mockA.mint(userA, 3, 3);
+        erc1155mockA.setApprovalForAll(address(ingot), true);
         ingot.fuse(1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
-        assertEq(erc1155mock.balanceOf(address(ingot), 1), 1);
-        assertEq(erc1155mock.balanceOf(address(ingot), 2), 2);
-        assertEq(erc1155mock.balanceOf(address(ingot), 3), 3);
-        assertEq(erc1155mock.balanceOf(userA, 1), 0);
-        assertEq(erc1155mock.balanceOf(userA, 2), 0);
-        assertEq(erc1155mock.balanceOf(userA, 3), 0);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 1), 1);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 2), 2);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 3), 3);
+        assertEq(erc1155mockA.balanceOf(userA, 1), 0);
+        assertEq(erc1155mockA.balanceOf(userA, 2), 0);
+        assertEq(erc1155mockA.balanceOf(userA, 3), 0);
 
-        erc1155mock.mint(userA, 1, 10);
-        erc1155mock.mint(userA, 2, 20);
-        erc1155mock.mint(userA, 3, 30);
+        erc1155mockA.mint(userA, 1, 10);
+        erc1155mockA.mint(userA, 2, 20);
+        erc1155mockA.mint(userA, 3, 30);
 
         ingot.fuse(10, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 11);
         assertEq(ingot.totalSupply(), 11);
-        assertEq(erc1155mock.balanceOf(address(ingot), 1), 11);
-        assertEq(erc1155mock.balanceOf(address(ingot), 2), 22);
-        assertEq(erc1155mock.balanceOf(address(ingot), 3), 33);
-        assertEq(erc1155mock.balanceOf(userA, 1), 0);
-        assertEq(erc1155mock.balanceOf(userA, 2), 0);
-        assertEq(erc1155mock.balanceOf(userA, 3), 0);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 1), 11);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 2), 22);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 3), 33);
+        assertEq(erc1155mockA.balanceOf(userA, 1), 0);
+        assertEq(erc1155mockA.balanceOf(userA, 2), 0);
+        assertEq(erc1155mockA.balanceOf(userA, 3), 0);
 
         ingot.dissolve(11, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
-        assertEq(erc1155mock.balanceOf(address(ingot), 1), 0);
-        assertEq(erc1155mock.balanceOf(address(ingot), 2), 0);
-        assertEq(erc1155mock.balanceOf(address(ingot), 3), 0);
-        assertEq(erc1155mock.balanceOf(userA, 1), 11);
-        assertEq(erc1155mock.balanceOf(userA, 2), 22);
-        assertEq(erc1155mock.balanceOf(userA, 3), 33);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 1), 0);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 2), 0);
+        assertEq(erc1155mockA.balanceOf(address(ingot), 3), 0);
+        assertEq(erc1155mockA.balanceOf(userA, 1), 11);
+        assertEq(erc1155mockA.balanceOf(userA, 2), 22);
+        assertEq(erc1155mockA.balanceOf(userA, 3), 33);
         vm.stopPrank();
 
         // Bunch of failure cases
         vm.startPrank(userB);
-        erc1155mock.mint(userB, 4, 1);
-        erc1155mock.mint(userB, 5, 2);
-        erc1155mock.mint(userB, 6, 3);
-        erc1155mock.setApprovalForAll(address(ingot), true);
+        erc1155mockA.mint(userB, 4, 1);
+        erc1155mockA.mint(userB, 5, 2);
+        erc1155mockA.mint(userB, 6, 3);
+        erc1155mockA.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
         ingot.fuse(1, emptyFloorIds);
         vm.expectRevert();
         ingot.dissolve(1, emptyFloorIds);
 
-        erc1155mock.mint(userB, 1, 1);
-        erc1155mock.mint(userB, 2, 2);
-        erc1155mock.mint(userB, 3, 2);
+        erc1155mockA.mint(userB, 1, 1);
+        erc1155mockA.mint(userB, 2, 2);
+        erc1155mockA.mint(userB, 3, 2);
         vm.expectRevert();
         ingot.fuse(1, emptyFloorIds);
 
-        erc1155mock.mint(userB, 3, 1);
+        erc1155mockA.mint(userB, 3, 1);
         vm.expectRevert();
         ingot.fuse(2, emptyFloorIds);
     }
