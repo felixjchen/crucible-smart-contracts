@@ -46,7 +46,8 @@ contract Crucible is ICrucible, OApp {
         feeRecipient = _feeRecipient;
     }
 
-    function _createIngot(uint256 _ingotId, IngotSpec memory _ingotSpec) internal returns (address) {
+    function _createIngot(IngotSpec memory _ingotSpec) internal returns (address) {
+        uint256 _ingotId = _ingotSpec.getId();
         require(ingotRegistry[_ingotId] == address(0), "Ingot already exists");
         address clone = Clones.clone(address(ingotImplementation));
         IIngot(clone).initialize(ICrucible(address(this)), _ingotId, _ingotSpec);
@@ -56,7 +57,7 @@ contract Crucible is ICrucible, OApp {
     }
 
     function createIngot(IngotSpec calldata _ingotSpec) public returns (address) {
-        return _createIngot(_ingotSpec.getId(), _ingotSpec);
+        return _createIngot(_ingotSpec);
     }
 
     function quoteSendIngot(
@@ -117,7 +118,7 @@ contract Crucible is ICrucible, OApp {
         uint256 _ingotId = _ingotSpec.getId();
         address _ingot = ingotRegistry[_ingotId];
         if (_ingot == address(0)) {
-            _ingot = _createIngot(_ingotId, _ingotSpec);
+            _ingot = _createIngot(_ingotSpec);
         }
         IIngot(_ingot).crucibleMint(_bUser.bytes32ToAddress(), _amount);
     }
