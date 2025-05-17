@@ -161,9 +161,9 @@ contract CrucibleTest is TestHelperOz5 {
         ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
-        MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, ingotSpec, 3);
+        MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, userA, ingotSpec, 3);
 
-        aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, ingotSpec, 3);
+        aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, ingotSpec, 3);
         verifyPackets(bEid, addressToBytes32(address(bCrucible)));
 
         vm.stopPrank();
@@ -197,9 +197,9 @@ contract CrucibleTest is TestHelperOz5 {
         ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
-        MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, ingotSpec, 3);
+        MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, userA, ingotSpec, 3);
 
-        aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, ingotSpec, 3);
+        aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, ingotSpec, 3);
         verifyPackets(bEid, addressToBytes32(address(bCrucible)));
         IIngot ingotB = IIngot(bCrucible.ingotRegistry(ingotSpec.getId()));
 

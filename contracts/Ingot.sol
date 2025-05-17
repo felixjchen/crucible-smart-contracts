@@ -18,11 +18,12 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
+// TODO: Perhaps this contract can go eventless for easier indexing
+
 contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver, IERC1155Receiver {
     using SafeERC20 for IERC20;
     using IngotSpecLib for IngotSpec;
 
-    event Initialized(address indexed crucible, uint256 indexed ingotId, IngotSpec ingotSpec);
     event Fused(address indexed user, uint256 amount);
     event Dissolved(address indexed user, uint256 amount);
     event CrucibleMinted(address indexed user, uint256 amount);
@@ -44,7 +45,7 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         IngotSpec calldata _ingotSpec
     ) public override initializer {
         require(address(_crucible) != address(0), "Crucible cannot be zero address");
-        _ingotSpec.validate();
+        // Note: We assume, (1) _ingotSpec.validate() and (2) _ingotSpec.getId() == _ingotId, we don't check here to save gas.
 
         crucible = _crucible;
 
@@ -53,8 +54,6 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
         ingotName = _ingotSpec.getName();
         ingotSymbol = _ingotSpec.getSymbol();
-
-        emit Initialized(address(_crucible), _ingotId, _ingotSpec);
     }
 
     function crucibleMint(address to, uint256 amount) external {

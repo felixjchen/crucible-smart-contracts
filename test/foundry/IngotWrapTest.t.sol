@@ -76,6 +76,7 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
+        // TODO: Replace with Crucible
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
         assertEq(ingot.name(), "Ingot NATIVE:31337:10^18");

@@ -47,11 +47,15 @@ contract Crucible is ICrucible, OApp {
     }
 
     function _createIngot(IngotSpec memory _ingotSpec) internal returns (address) {
+        // (1) _ingotSpec.validate() and (2) _ingotSpec.getId() == _ingotId are true for Ingot.initialize()
+        _ingotSpec.validate();
         uint256 _ingotId = _ingotSpec.getId();
+
         require(ingotRegistry[_ingotId] == address(0), "Ingot already exists");
         address clone = Clones.clone(address(ingotImplementation));
         IIngot(clone).initialize(ICrucible(address(this)), _ingotId, _ingotSpec);
         ingotRegistry[_ingotId] = clone;
+
         emit IngotCreated(clone, _ingotId, _ingotSpec);
         return clone;
     }
@@ -63,6 +67,7 @@ contract Crucible is ICrucible, OApp {
     function quoteSendIngot(
         uint32 _dstEid,
         bytes calldata _options,
+        address _destination,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) public view returns (MessagingFee memory) {
@@ -71,7 +76,7 @@ contract Crucible is ICrucible, OApp {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_ingotSpec, msg.sender.addressToBytes32(), _amount),
+                    abi.encode(_destination.addressToBytes32(), _amount, _ingotSpec),
                     _options,
                     false
                 ),
@@ -82,6 +87,7 @@ contract Crucible is ICrucible, OApp {
     function sendIngot(
         uint32 _dstEid,
         bytes calldata _options,
+        address _destination,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) public payable {
@@ -93,14 +99,17 @@ contract Crucible is ICrucible, OApp {
         uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
         require(msg.value >= _fee, "Insufficient fee");
         uint256 _lzFee = msg.value - _fee;
-        (bool ok, ) = feeRecipient.call{ value: _fee }("");
-        require(ok, "feeRecipient transfer failed");
+        {
+            // TODO Ugly
+            (bool ok, ) = feeRecipient.call{ value: _fee }("");
+            require(ok, "feeRecipient transfer failed");
+        }
 
         endpoint.send{ value: _lzFee }(
             MessagingParams(
                 _dstEid,
                 _getPeerOrRevert(_dstEid),
-                abi.encode(_ingotSpec, msg.sender.addressToBytes32(), _amount),
+                abi.encode(_destination, _amount, _ingotSpec),
                 _options,
                 false
             ),
@@ -110,10 +119,11 @@ contract Crucible is ICrucible, OApp {
         emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid);
     }
 
+    // TODO Perhaps a cheaper no create option
     function _lzReceive(Origin calldata, bytes32, bytes calldata _payload, address, bytes calldata) internal override {
-        (IngotSpec memory _ingotSpec, bytes32 _bUser, uint256 _amount) = abi.decode(
+        (bytes32 _bUser, uint256 _amount, IngotSpec memory _ingotSpec) = abi.decode(
             _payload,
-            (IngotSpec, bytes32, uint256)
+            (bytes32, uint256, IngotSpec)
         );
         uint256 _ingotId = _ingotSpec.getId();
         address _ingot = ingotRegistry[_ingotId];
