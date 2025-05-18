@@ -8,7 +8,7 @@ import { MessagingFee } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 interface ICrucible {
     function invent(IngotSpec calldata _ingotSpec) external returns (address);
 
-    function fuse(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable;
+    function forge(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable;
 
     function dissolve(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable;
 

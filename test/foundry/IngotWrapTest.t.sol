@@ -92,7 +92,7 @@ contract IngotWrapTest is TestHelperOz5 {
         // Bunch of success cases
         vm.deal(userA, initialBalance);
         vm.startPrank(userA);
-        crucible.fuse{ value: initialBalance }(ingotId, 100, emptyFloorIds);
+        crucible.forge{ value: initialBalance }(ingotId, 100, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 100);
         assertEq(ingot.totalSupply(), 100);
         assertEq(address(ingot).balance, initialBalance);
@@ -109,11 +109,11 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.startPrank(userB);
         vm.deal(userB, 1 ether);
         vm.expectRevert();
-        crucible.fuse{ value: 1 wei }(ingotId, 1 ether, emptyFloorIds);
+        crucible.forge{ value: 1 wei }(ingotId, 1 ether, emptyFloorIds);
         vm.expectRevert();
-        crucible.fuse{ value: 1 ether }(ingotId, 1 ether, emptyFloorIds);
+        crucible.forge{ value: 1 ether }(ingotId, 1 ether, emptyFloorIds);
         // 18 decimals will succeed
-        crucible.fuse{ value: 1 ether }(ingotId, 1, emptyFloorIds);
+        crucible.forge{ value: 1 ether }(ingotId, 1, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -147,7 +147,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc20mockA.mint(userA, initialBalance);
         erc20mockA.approve(address(ingot), initialBalance);
 
-        crucible.fuse(ingotId, initialBalance, emptyFloorIds);
+        crucible.forge(ingotId, initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), initialBalance);
         assertEq(ingot.totalSupply(), initialBalance);
         assertEq(erc20mockA.balanceOf(address(ingot)), initialBalance);
@@ -164,11 +164,11 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.startPrank(userB);
         erc20mockA.mint(userB, 1 wei);
         vm.expectRevert();
-        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
+        crucible.forge(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.approve(address(ingot), 10 wei);
         vm.expectRevert();
-        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
+        crucible.forge(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.mint(userB, 9 wei);
         vm.expectRevert();
@@ -206,7 +206,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc20mockA.mint(userA, 1 * 10 ** 18);
         erc20mockA.approve(address(ingot), 1 * 10 ** 18);
 
-        crucible.fuse(ingotId, 1, emptyFloorIds);
+        crucible.forge(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc20mockA.balanceOf(address(ingot)), 1 * 10 ** 18);
@@ -223,11 +223,11 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.startPrank(userB);
         erc20mockA.mint(userB, 1 wei);
         vm.expectRevert();
-        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
+        crucible.forge(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.approve(address(ingot), 10 wei);
         vm.expectRevert();
-        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
+        crucible.forge(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.mint(userB, 9 wei);
         vm.expectRevert();
@@ -271,7 +271,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIds[0][0] = 1;
         floorIds[0][1] = 2;
         floorIds[0][2] = 3;
-        crucible.fuse(ingotId, 3, floorIds);
+        crucible.forge(ingotId, 3, floorIds);
         assertEq(ingot.balanceOf(userA), 3);
         assertEq(ingot.totalSupply(), 3);
         assertEq(erc721mockA.ownerOf(1), address(ingot));
@@ -304,10 +304,10 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIdsB[0][2] = 7;
 
         vm.expectRevert();
-        crucible.fuse(ingotId, 3, floorIdsB);
+        crucible.forge(ingotId, 3, floorIdsB);
 
         floorIdsB[0][2] = 6;
-        crucible.fuse(ingotId, 3, floorIdsB);
+        crucible.forge(ingotId, 3, floorIdsB);
 
         floorIdsB[0][2] = 7;
         vm.expectRevert();
@@ -366,7 +366,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIds[0][3] = 4;
         floorIds[0][4] = 5;
         floorIds[0][5] = 6;
-        crucible.fuse(ingotId, 2, floorIds);
+        crucible.forge(ingotId, 2, floorIds);
         assertEq(ingot.balanceOf(userA), 2);
         assertEq(ingot.totalSupply(), 2);
         assertEq(erc721mockA.ownerOf(1), address(ingot));
@@ -432,7 +432,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc721mockA.mint(userA, 3);
         erc721mockA.setApprovalForAll(address(ingot), true);
 
-        crucible.fuse(ingotId, 1, emptyFloorIds);
+        crucible.forge(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc721mockA.ownerOf(1), address(ingot));
@@ -458,7 +458,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc721mockA.mint(userB, 6);
         erc721mockA.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
-        crucible.fuse(ingotId, 1, emptyFloorIds);
+        crucible.forge(ingotId, 1, emptyFloorIds);
         vm.expectRevert();
         crucible.dissolve(ingotId, 1, emptyFloorIds);
         vm.stopPrank();
@@ -510,7 +510,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userA, 2, 2);
         erc1155mockA.mint(userA, 3, 3);
         erc1155mockA.setApprovalForAll(address(ingot), true);
-        crucible.fuse(ingotId, 1, emptyFloorIds);
+        crucible.forge(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc1155mockA.balanceOf(address(ingot), 1), 1);
@@ -524,7 +524,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userA, 2, 20);
         erc1155mockA.mint(userA, 3, 30);
 
-        crucible.fuse(ingotId, 10, emptyFloorIds);
+        crucible.forge(ingotId, 10, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 11);
         assertEq(ingot.totalSupply(), 11);
         assertEq(erc1155mockA.balanceOf(address(ingot), 1), 11);
@@ -552,7 +552,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userB, 6, 3);
         erc1155mockA.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
-        crucible.fuse(ingotId, 1, emptyFloorIds);
+        crucible.forge(ingotId, 1, emptyFloorIds);
         vm.expectRevert();
         crucible.dissolve(ingotId, 1, emptyFloorIds);
 
@@ -560,11 +560,11 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userB, 2, 2);
         erc1155mockA.mint(userB, 3, 2);
         vm.expectRevert();
-        crucible.fuse(ingotId, 1, emptyFloorIds);
+        crucible.forge(ingotId, 1, emptyFloorIds);
 
         erc1155mockA.mint(userB, 3, 1);
         vm.expectRevert();
-        crucible.fuse(ingotId, 2, emptyFloorIds);
+        crucible.forge(ingotId, 2, emptyFloorIds);
     }
 
     function test_many() public {
@@ -648,7 +648,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIds[0][0] = 1;
         floorIds[0][1] = 2;
 
-        crucible.fuse{ value: 1 ether }(ingotId, 1, floorIds);
+        crucible.forge{ value: 1 ether }(ingotId, 1, floorIds);
 
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);

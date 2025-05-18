@@ -48,7 +48,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
         return _createIngot(_ingotSpec);
     }
 
-    function fuse(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable nonReentrant {
+    function forge(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable nonReentrant {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
