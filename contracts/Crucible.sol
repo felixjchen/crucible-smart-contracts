@@ -60,17 +60,14 @@ contract Crucible is ICrucible, OApp {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
-        uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
-        require(msg.value >= _fee, "Insufficient fee");
-        uint256 _lzFee = msg.value - _fee;
-        require(payable(feeRecipient).send(_fee), "feeRecipient transfer failed");
+        uint256 _lzFee = _takeBridgeFee(_amount);
 
         IIngot(_ingot).crucibleBurn(msg.sender, _amount);
         endpoint.send{ value: _lzFee }(
             MessagingParams(
                 _dstEid,
                 _getPeerOrRevert(_dstEid),
-                abi.encode(_destination, _amount, _ingotId),
+                abi.encode(_ingotId, _destination, _amount),
                 _options,
                 false
             ),
@@ -89,17 +86,14 @@ contract Crucible is ICrucible, OApp {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot does not exist");
 
-        uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
-        require(msg.value >= _fee, "Insufficient fee");
-        uint256 _lzFee = msg.value - _fee;
-        require(payable(feeRecipient).send(_fee), "feeRecipient transfer failed");
+        uint256 _lzFee = _takeBridgeFee(_amount);
 
         IIngot(_ingot).crucibleBurn(msg.sender, _amount);
         endpoint.send{ value: _lzFee }(
             MessagingParams(
                 _dstEid,
                 _getPeerOrRevert(_dstEid),
-                abi.encode(_destination, _amount, _ingotSpec),
+                abi.encode(_ingotSpec, _destination, _amount),
                 _options,
                 false
             ),
@@ -112,21 +106,17 @@ contract Crucible is ICrucible, OApp {
     function _lzReceive(Origin calldata, bytes32, bytes calldata _payload, address, bytes calldata) internal override {
         bytes32 _bUser;
         uint256 _amount;
-        uint256 _ingotId;
 
+        address _ingot;
         if (_payload.length == 3 * 32) {
-            (_bUser, _amount, _ingotId) = abi.decode(_payload, (bytes32, uint256, uint256));
-            require(ingotRegistry[_ingotId] != address(0), "Unknown ingotId");
+            uint256 _ingotId;
+            (_ingotId, _bUser, _amount) = abi.decode(_payload, (uint256, bytes32, uint256));
+            _ingot = ingotRegistry[_ingotId];
         } else {
             IngotSpec memory _spec;
-            (_bUser, _amount, _spec) = abi.decode(_payload, (bytes32, uint256, IngotSpec));
-            _ingotId = _spec.getId();
-            if (ingotRegistry[_ingotId] == address(0)) {
-                ingotRegistry[_ingotId] = _createIngot(_spec);
-            }
+            (_spec, _bUser, _amount) = abi.decode(_payload, (IngotSpec, bytes32, uint256));
+            _ingot = _createIngot(_spec);
         }
-
-        address _ingot = ingotRegistry[_ingotId];
         IIngot(_ingot).crucibleMint(_bUser.bytes32ToAddress(), _amount);
     }
 
@@ -145,6 +135,12 @@ contract Crucible is ICrucible, OApp {
         return clone;
     }
 
+    function _takeBridgeFee(uint256 _amount) internal returns (uint256) {
+        uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
+        require(payable(feeRecipient).send(_fee), "feeRecipient transfer failed");
+        return msg.value - _fee;
+    }
+
     // Views
     function quoteSendIngot(
         uint32 _dstEid,
@@ -158,7 +154,7 @@ contract Crucible is ICrucible, OApp {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_destination.addressToBytes32(), _amount, _ingotId),
+                    abi.encode(_ingotId, _destination.addressToBytes32(), _amount),
                     _options,
                     false
                 ),
@@ -178,7 +174,7 @@ contract Crucible is ICrucible, OApp {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_destination.addressToBytes32(), _amount, _ingotSpec),
+                    abi.encode(_ingotSpec, _destination.addressToBytes32(), _amount),
                     _options,
                     false
                 ),
