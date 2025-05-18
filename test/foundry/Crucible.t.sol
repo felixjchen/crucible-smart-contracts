@@ -100,14 +100,14 @@ contract CrucibleTest is TestHelperOz5 {
         assertEq(aCrucible.feeRecipient(), feeRecipient);
     }
 
-    function test_createIngot() public {
+    function test_invent() public {
         IngotSpec memory ingotSpec = getIngotSpec();
         assertEq(aCrucible.ingotRegistry(ingotSpec.getId()), address(0), "Ingot should not exist before creation");
-        IIngot ingot = IIngot(aCrucible.createIngot(ingotSpec));
+        IIngot ingot = IIngot(aCrucible.invent(ingotSpec));
         assertTrue(aCrucible.ingotRegistry(ingotSpec.getId()) != address(0), "Ingot should exist after creation");
 
         vm.expectRevert("Ingot already exists");
-        aCrucible.createIngot(ingotSpec);
+        aCrucible.invent(ingotSpec);
 
         vm.deal(address(userA), 3 wei + 2 * feeAmount);
         erc721mock.mint(userA, 0);
@@ -139,10 +139,10 @@ contract CrucibleTest is TestHelperOz5 {
         assertEq(feeRecipient.balance, 2 * feeAmount);
     }
 
-    function test_sendIngotDoesNotCreate() public {
+    function test_transmuteDoesNotCreate() public {
         IngotSpec memory ingotSpec = getIngotSpec();
-        IIngot ingotA = IIngot(aCrucible.createIngot(ingotSpec));
-        IIngot ingotB = IIngot(bCrucible.createIngot(ingotSpec));
+        IIngot ingotA = IIngot(aCrucible.invent(ingotSpec));
+        IIngot ingotB = IIngot(bCrucible.invent(ingotSpec));
 
         vm.deal(address(userA), 1 ether);
         erc721mock.mint(userA, 0);
@@ -163,9 +163,9 @@ contract CrucibleTest is TestHelperOz5 {
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
 
         uint256 _ingotId = ingotSpec.getId();
-        MessagingFee memory messagingFee = aCrucible.quoteSendIngot(bEid, options, userA, _ingotId, 3);
+        MessagingFee memory messagingFee = aCrucible.quoteTransmute(bEid, options, userA, _ingotId, 3);
 
-        aCrucible.sendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, _ingotId, 3);
+        aCrucible.transmute{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, _ingotId, 3);
         verifyPackets(bEid, addressToBytes32(address(bCrucible)));
 
         vm.stopPrank();
@@ -178,9 +178,9 @@ contract CrucibleTest is TestHelperOz5 {
         assertEq(feeRecipient.balance, 2 * feeAmount);
     }
 
-    function test_sendIngotDoesCreate() public {
+    function test_transmuteDoesCreate() public {
         IngotSpec memory ingotSpec = getIngotSpec();
-        IIngot ingotA = IIngot(aCrucible.createIngot(ingotSpec));
+        IIngot ingotA = IIngot(aCrucible.invent(ingotSpec));
 
         vm.deal(address(userA), 1 ether);
         erc721mock.mint(userA, 0);
@@ -199,9 +199,9 @@ contract CrucibleTest is TestHelperOz5 {
         aCrucible.fuse{ value: 3 wei + feeAmount }(ingotSpec.getId(), 3, floorIds);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
-        MessagingFee memory messagingFee = aCrucible.quoteCreateThenSendIngot(bEid, options, userA, ingotSpec, 3);
+        MessagingFee memory messagingFee = aCrucible.quoteTransmuteWithInvent(bEid, options, userA, ingotSpec, 3);
 
-        aCrucible.createThenSendIngot{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, ingotSpec, 3);
+        aCrucible.transmuteWithInvent{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, ingotSpec, 3);
         verifyPackets(bEid, addressToBytes32(address(bCrucible)));
         IIngot ingotB = IIngot(bCrucible.ingotRegistry(ingotSpec.getId()));
 

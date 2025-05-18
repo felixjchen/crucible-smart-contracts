@@ -9,7 +9,6 @@ import { CollectionType } from "./types/CollectionType.sol";
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -18,7 +17,7 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver, IERC1155Receiver {
+contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receiver {
     using SafeERC20 for IERC20;
     using IngotSpecLib for IngotSpec;
 
@@ -114,11 +113,9 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     function _takeFloors(address user, uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
-        if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
-            for (uint i = 0; i < floorIds.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), floorIds[i]);
-            }
+        require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
+        for (uint i = 0; i < floorIds.length; ++i) {
+            IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), floorIds[i]);
         }
     }
 
@@ -144,11 +141,9 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     function _giveFloors(address user, uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
-        if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
-            require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
-            for (uint i = 0; i < floorIds.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, floorIds[i]);
-            }
+        require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
+        for (uint i = 0; i < floorIds.length; ++i) {
+            IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, floorIds[i]);
         }
     }
 

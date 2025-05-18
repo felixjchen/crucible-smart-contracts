@@ -74,7 +74,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
 
         uint256 ingotId = ingot.ingotId();
 
@@ -128,7 +128,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(ingot.ingotId(), ingotId);
@@ -187,7 +187,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(ingot.ingotId(), ingotId);
@@ -246,7 +246,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(ingot.ingotId(), ingotId);
@@ -335,7 +335,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(ingot.ingotId(), ingotId);
@@ -409,7 +409,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(ingot.ingotId(), ingotId);
@@ -484,7 +484,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(ingot.ingotId(), ingotId);
@@ -618,7 +618,7 @@ contract IngotWrapTest is TestHelperOz5 {
         console.log(ingotSpec.nuggetSpecs[4].getId());
 
         // 1 ingot = 1 ether + 10**18 ERC20 + 2 ERC721FLOOR + ERC721:1,2 + ERC1155:1x3,2x4
-        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(

@@ -8,42 +8,23 @@ import { Ingot } from "./Ingot.sol";
 import { IngotSpec, IngotSpecLib } from "./types/IngotSpec.sol";
 import { CollectionType } from "./types/CollectionType.sol";
 
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+
 import { OApp, Origin, MessagingFee } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 import { MessagingParams } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 import { OFTMsgCodec } from "@layerzerolabs/oft-evm/contracts/libs/OFTMsgCodec.sol";
 
-contract Crucible is ICrucible, OApp {
+contract Crucible is ICrucible, OApp, ReentrancyGuard {
     using OFTMsgCodec for bytes32;
     using OFTMsgCodec for address;
     using IngotSpecLib for IngotSpec;
 
-    event IngotCreated(address indexed ingot, uint256 indexed ingotId, IngotSpec ingotSpec);
-    event IngotBridged(
-        address indexed ingot,
-        address indexed user,
-        uint256 indexed ingotId,
-        uint256 amount,
-        uint32 dstEid,
-        uint256 fee
-    );
-    event IngotFused(
-        address indexed ingot,
-        address indexed user,
-        uint256 indexed ingotId,
-        uint256 amount,
-        uint256[][] floorIds,
-        uint256 fee
-    );
-    event IngotDissolved(
-        address indexed ingot,
-        address indexed user,
-        uint256 indexed ingotId,
-        uint256 amount,
-        uint256[][] floorIds,
-        uint256 fee
-    );
+    event Invented(uint256 indexed ingotId, IngotSpec ingotSpec);
+    event Transmuted(uint256 indexed ingotId, address indexed user, uint256 amount, uint32 dstEid, uint256 fee);
+    event Fused(uint256 indexed ingotId, address indexed user, uint256 amount, uint256[][] floorIds, uint256 fee);
+    event Dissolved(uint256 indexed ingotId, address indexed user, uint256 amount, uint256[][] floorIds, uint256 fee);
 
     IIngot private immutable ingotImplementation;
     mapping(uint256 => address) public ingotRegistry;
@@ -63,11 +44,11 @@ contract Crucible is ICrucible, OApp {
         feeRecipient = _feeRecipient;
     }
 
-    function createIngot(IngotSpec calldata _ingotSpec) public returns (address) {
+    function invent(IngotSpec calldata _ingotSpec) public returns (address) {
         return _createIngot(_ingotSpec);
     }
 
-    function fuse(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable {
+    function fuse(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable nonReentrant {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
@@ -75,10 +56,10 @@ contract Crucible is ICrucible, OApp {
 
         IIngot(_ingot).wrap{ value: msg.value - fee }(msg.sender, _amount, floorIds);
 
-        emit IngotFused(_ingot, msg.sender, _ingotId, _amount, floorIds, fee);
+        emit Fused(_ingotId, msg.sender, _amount, floorIds, fee);
     }
 
-    function dissolve(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable {
+    function dissolve(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable nonReentrant {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
@@ -86,16 +67,16 @@ contract Crucible is ICrucible, OApp {
 
         IIngot(_ingot).unwrap(msg.sender, _amount, floorIds);
 
-        emit IngotDissolved(_ingot, msg.sender, _ingotId, _amount, floorIds, fee);
+        emit Dissolved(_ingotId, msg.sender, _amount, floorIds, fee);
     }
 
-    function sendIngot(
+    function transmute(
         uint32 _dstEid,
         bytes calldata _options,
         address _user,
         uint256 _ingotId,
         uint256 _amount
-    ) external payable {
+    ) public payable {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
@@ -108,10 +89,10 @@ contract Crucible is ICrucible, OApp {
             payable(msg.sender)
         );
 
-        emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid, fee);
+        emit Transmuted(_ingotId, msg.sender, _amount, _dstEid, fee);
     }
 
-    function createThenSendIngot(
+    function transmuteWithInvent(
         uint32 _dstEid,
         bytes calldata _options,
         address _user,
@@ -137,7 +118,7 @@ contract Crucible is ICrucible, OApp {
             payable(msg.sender)
         );
 
-        emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid, fee);
+        emit Transmuted(_ingotId, msg.sender, _amount, _dstEid, fee);
     }
 
     function _lzReceive(Origin calldata, bytes32, bytes calldata _payload, address, bytes calldata) internal override {
@@ -168,7 +149,7 @@ contract Crucible is ICrucible, OApp {
         IIngot(clone).initialize(ICrucible(address(this)), _ingotId, _ingotSpec);
         ingotRegistry[_ingotId] = clone;
 
-        emit IngotCreated(clone, _ingotId, _ingotSpec);
+        emit Invented(_ingotId, _ingotSpec);
         return clone;
     }
 
@@ -191,7 +172,7 @@ contract Crucible is ICrucible, OApp {
     }
 
     // Views
-    function quoteSendIngot(
+    function quoteTransmute(
         uint32 _dstEid,
         bytes calldata _options,
         address _user,
@@ -211,7 +192,7 @@ contract Crucible is ICrucible, OApp {
             );
     }
 
-    function quoteCreateThenSendIngot(
+    function quoteTransmuteWithInvent(
         uint32 _dstEid,
         bytes calldata _options,
         address _user,
