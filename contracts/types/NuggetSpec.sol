@@ -32,7 +32,6 @@ library NuggetSpecLib {
     using Strings for uint256;
     using Strings for uint24;
 
-    // TODO: I dont really like this
     function getId(NuggetSpec memory _nuggetSpec) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(_nuggetSpec)));
     }
@@ -142,8 +141,13 @@ library NuggetSpecLib {
             symbol = string.concat(symbol, _nuggetSpec.ids[_nuggetSpec.ids.length - 1].toString());
             return symbol;
         } else if (_nuggetSpec.collectionType == CollectionType.ERC1155) {
-            string memory symbol = Strings.toHexString(uint256(uint160(_nuggetSpec.collection)), 20);
-            symbol = string.concat(symbol, ":");
+            string memory collection = Strings.toHexString(uint256(uint160(_nuggetSpec.collection)), 20);
+            bytes memory slice = new bytes(10);
+            for (uint256 i = 0; i < 10; ++i) {
+                slice[i] = bytes(collection)[i];
+            }
+            string memory symbol = string(slice);
+            symbol = string.concat("ERC1155_", symbol, ":");
             for (uint256 i = 0; i < _nuggetSpec.ids.length - 1; ++i) {
                 symbol = string.concat(
                     symbol,

@@ -108,7 +108,6 @@ contract OFTProfilerExample is Script {
                 numOfRuns: 1 // Number of profiling runs per payload
             })
         );
-        // TODO: zkSync only works for single payloads when run alone with the --zksync flag, requires foundry-zk
         // chainConfigs.push(
         //     ChainConfig({
         //         rpcUrl: "https://mainnet.era.zksync.io",

@@ -28,7 +28,6 @@ contract IngotWrapTest is TestHelperOz5 {
     address private userB = makeAddr("userB");
     uint256 private initialBalance = 100 ether;
 
-    Ingot private ingot;
     Crucible private crucible;
     NativeFixedFeeCalculator private feeCalculator;
 
@@ -53,15 +52,15 @@ contract IngotWrapTest is TestHelperOz5 {
                 abi.encode(address(endpoints[1]), owner, feeCalculator, address(this))
             )
         );
-        ingot = new Ingot();
 
-        erc20mockA = new ERC20Mock("BRINE", "BRINE");
-        erc721mockA = new ERC721Mock("MoredCrepePopeClub", "MoredCrepePopeClub");
-        erc1155mockA = new ERC1155Mock("PurpleBeta", "PurpleBeta");
-
-        erc20mockB = new ERC20Mock("USBC", "USBC");
-        erc721mockB = new ERC721Mock("BABUKI", "BABUKI");
-        erc1155mockB = new ERC1155Mock("PurpleFall", "PurpleFall");
+        (erc20mockA, erc721mockA, erc1155mockA, erc20mockB, erc721mockB, erc1155mockB) = (
+            new ERC20Mock{ salt: keccak256("20A") }("BRINE", "BRINE"),
+            new ERC721Mock{ salt: keccak256("721A") }("MoredCrepePopeClub", "MoredCrepePopeClub"),
+            new ERC1155Mock{ salt: keccak256("1155A") }("PurpleBeta", "PurpleBeta"),
+            new ERC20Mock{ salt: keccak256("20B") }("USBC", "USBC"),
+            new ERC721Mock{ salt: keccak256("721B") }("BABUKI", "BABUKI"),
+            new ERC1155Mock{ salt: keccak256("1155B") }("PurpleFall", "PurpleFall")
+        );
     }
 
     function test_native() public {
@@ -75,9 +74,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        // TODO: Replace with Crucible
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(ingot.name(), "Ingot NATIVE:31337:10^18");
         assertEq(ingot.symbol(), "IO NATIVE:31337");
@@ -127,8 +124,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^0");
         assertEq(ingot.symbol(), "IO BRINE");
@@ -184,8 +180,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^18");
         assertEq(ingot.symbol(), "IO BRINE");
@@ -241,8 +236,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1xFLOOR");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:1xFLOOR");
@@ -328,8 +322,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:3xFLOOR");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:3xFLOOR");
@@ -400,8 +393,7 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1,2,3");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:1,2,3");
@@ -473,12 +465,11 @@ contract IngotWrapTest is TestHelperOz5 {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
-        uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         string memory collection_string = Strings.toHexString(uint256(uint160(nuggetSpec.collection)), 20);
         string memory name = string.concat("Ingot ERC1155:", collection_string, ":1x1,2x2,3x3");
-        string memory symbol = string.concat("IO ", collection_string, ":1x1,2x2,3x3");
+        string memory symbol = string.concat("IO ", "ERC1155_0x8724478a:1x1,2x2,3x3");
         assertEq(ingot.name(), name);
         assertEq(ingot.symbol(), symbol);
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc1155mockA));
@@ -556,14 +547,14 @@ contract IngotWrapTest is TestHelperOz5 {
 
     function test_many() public {
         IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](5) });
-        ingotSpec.nuggetSpecs[1] = NuggetSpec({
+        ingotSpec.nuggetSpecs[3] = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
             decimalsOrFloorAmount: 18,
             ids: emptyArray,
             amounts: emptyArray
         });
-        ingotSpec.nuggetSpecs[3] = NuggetSpec({
+        ingotSpec.nuggetSpecs[4] = NuggetSpec({
             collection: address(erc20mockA),
             collectionType: CollectionType.ERC20,
             decimalsOrFloorAmount: 6,
@@ -590,7 +581,7 @@ contract IngotWrapTest is TestHelperOz5 {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 3;
         amounts[1] = 4;
-        ingotSpec.nuggetSpecs[4] = NuggetSpec({
+        ingotSpec.nuggetSpecs[1] = NuggetSpec({
             collection: address(erc1155mockA),
             collectionType: CollectionType.ERC1155,
             decimalsOrFloorAmount: 0,
@@ -604,18 +595,16 @@ contract IngotWrapTest is TestHelperOz5 {
         console.log(ingotSpec.nuggetSpecs[3].getId());
         console.log(ingotSpec.nuggetSpecs[4].getId());
 
-        uint256 ingotId = ingotSpec.getId();
-
         // 1 ingot = 1 ether + 10**18 ERC20 + 2 ERC721FLOOR + ERC721:1,2 + ERC1155:1x3,2x4
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
         assertEq(
             ingot.name(),
-            "Ingot ERC721:MoredCrepePopeClub:2xFLOOR NATIVE:31337:10^18 ERC721:BABUKI:1,2 ERC20:BRINE:10^6 ERC1155:0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
+            "Ingot ERC721:MoredCrepePopeClub:2xFLOOR ERC1155:0x8724478ad648d2c08c81ea58feb7cd23f26dc3b0:1x3,2x4 ERC721:BABUKI:1,2 NATIVE:31337:10^18 ERC20:BRINE:10^6"
         );
         assertEq(
             ingot.symbol(),
-            "IO MoredCrepePopeClub:2xFLOOR NATIVE:31337 BABUKI:1,2 BRINE 0xd6dd336e27c4058926524768484be3806d3cf668:1x3,2x4"
+            "IO MoredCrepePopeClub:2xFLOOR ERC1155_0x8724478a:1x3,2x4 BABUKI:1,2 NATIVE:31337 BRINE"
         );
 
         vm.startPrank(userA);

@@ -39,6 +39,11 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     constructor() ERC20("IngotBaseImplementation", "IngotBaseImplementation") {}
 
+    modifier onlyCrucible() {
+        require(msg.sender == address(crucible), "Only crucible can call ingots");
+        _;
+    }
+
     function initialize(
         ICrucible _crucible,
         uint256 _ingotId,
@@ -56,13 +61,12 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         ingotSymbol = _ingotSpec.getSymbol();
     }
 
-    function crucibleMint(address to, uint256 amount) external {
-        require(msg.sender == address(crucible), "Only crucible can mint");
+    function crucibleMint(address to, uint256 amount) external onlyCrucible {
         _mint(to, amount);
         emit CrucibleMinted(to, amount);
     }
 
-    function crucibleBurn(address from, uint256 amount) external {
+    function crucibleBurn(address from, uint256 amount) external onlyCrucible {
         require(msg.sender == address(crucible), "Only crucible can burn");
         _burn(from, amount);
         emit CrucibleBurned(from, amount);
@@ -85,8 +89,8 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
             uint256 _fee = crucible.feeCalculator().wrap(msg.sender, amount);
             require(msg.value == amount * 10 ** _nuggetSpec.decimalsOrFloorAmount + _fee, "Invalid amount");
-            (bool ok, ) = payable(crucible.feeRecipient()).call{ value: _fee }("");
-            require(ok, "feeRecipient transfer failed");
+
+            require(payable(crucible.feeRecipient()).send(_fee), "feeRecipient transfer failed");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransferFrom(
                 msg.sender,
@@ -178,8 +182,8 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
     function dissolve(uint256 amount, uint256[][] calldata floorIds) public payable nonReentrant {
         uint256 _fee = crucible.feeCalculator().unwrap(msg.sender, amount);
         require(msg.value == _fee, "Invalid fee");
-        (bool ok, ) = payable(crucible.feeRecipient()).call{ value: _fee }("");
-        require(ok, "feeRecipient transfer failed");
+
+        require(payable(crucible.feeRecipient()).send(_fee), "feeRecipient transfer failed");
 
         uint256 j = 0;
         for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
