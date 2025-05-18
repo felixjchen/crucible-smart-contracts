@@ -26,8 +26,6 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     event Fused(address indexed user, uint256 amount);
     event Dissolved(address indexed user, uint256 amount);
-    event CrucibleMinted(address indexed user, uint256 amount);
-    event CrucibleBurned(address indexed user, uint256 amount);
 
     ICrucible public crucible;
 
@@ -63,13 +61,11 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
 
     function crucibleMint(address to, uint256 amount) external onlyCrucible {
         _mint(to, amount);
-        emit CrucibleMinted(to, amount);
     }
 
     function crucibleBurn(address from, uint256 amount) external onlyCrucible {
         require(msg.sender == address(crucible), "Only crucible can burn");
         _burn(from, amount);
-        emit CrucibleBurned(from, amount);
     }
 
     function spec() public view returns (IngotSpec memory) {

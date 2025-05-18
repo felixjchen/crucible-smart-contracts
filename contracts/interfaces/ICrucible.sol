@@ -12,7 +12,9 @@ interface ICrucible {
         uint32 _dstEid,
         bytes calldata _options,
         address _destination,
-        IngotSpec calldata _ingotSpec,
+        uint256 _ingotId,
         uint256 amount
     ) external payable;
+
+    // TODO Fill out LZ methods
 }
