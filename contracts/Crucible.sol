@@ -25,7 +25,24 @@ contract Crucible is ICrucible, OApp {
         address indexed user,
         uint256 indexed ingotId,
         uint256 amount,
-        uint32 dstEid
+        uint32 dstEid,
+        uint256 fee
+    );
+    event IngotFused(
+        address indexed ingot,
+        address indexed user,
+        uint256 indexed ingotId,
+        uint256 amount,
+        uint256[][] floorIds,
+        uint256 fee
+    );
+    event IngotDissolved(
+        address indexed ingot,
+        address indexed user,
+        uint256 indexed ingotId,
+        uint256 amount,
+        uint256[][] floorIds,
+        uint256 fee
     );
 
     IIngot private immutable ingotImplementation;
@@ -50,35 +67,54 @@ contract Crucible is ICrucible, OApp {
         return _createIngot(_ingotSpec);
     }
 
+    function fuse(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable {
+        address _ingot = ingotRegistry[_ingotId];
+        require(_ingot != address(0), "Ingot not registered");
+
+        uint256 fee = _takeWrapFee(_amount);
+
+        IIngot(_ingot).wrap{ value: msg.value - fee }(msg.sender, _amount, floorIds);
+
+        emit IngotFused(_ingot, msg.sender, _ingotId, _amount, floorIds, fee);
+    }
+
+    function dissolve(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable {
+        address _ingot = ingotRegistry[_ingotId];
+        require(_ingot != address(0), "Ingot not registered");
+
+        uint256 fee = _takeUnwrapFee(_amount);
+
+        IIngot(_ingot).unwrap(msg.sender, _amount, floorIds);
+
+        emit IngotDissolved(_ingot, msg.sender, _ingotId, _amount, floorIds, fee);
+    }
+
     function sendIngot(
         uint32 _dstEid,
         bytes calldata _options,
-        address _destination,
+        address _user,
         uint256 _ingotId,
         uint256 _amount
     ) external payable {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
-        uint256 _lzFee = _takeBridgeFee(_amount);
+        uint256 fee = _takeBridgeFee(_amount);
+        uint256 _lzFee = msg.value - fee;
 
-        IIngot(_ingot).crucibleBurn(msg.sender, _amount);
+        IIngot(_ingot).burn(msg.sender, _amount);
         endpoint.send{ value: _lzFee }(
-            MessagingParams(
-                _dstEid,
-                _getPeerOrRevert(_dstEid),
-                abi.encode(_ingotId, _destination, _amount),
-                _options,
-                false
-            ),
+            MessagingParams(_dstEid, _getPeerOrRevert(_dstEid), abi.encode(_ingotId, _user, _amount), _options, false),
             payable(msg.sender)
         );
+
+        emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid, fee);
     }
 
     function createThenSendIngot(
         uint32 _dstEid,
         bytes calldata _options,
-        address _destination,
+        address _user,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) public payable {
@@ -86,21 +122,22 @@ contract Crucible is ICrucible, OApp {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot does not exist");
 
-        uint256 _lzFee = _takeBridgeFee(_amount);
+        uint256 fee = _takeBridgeFee(_amount);
+        uint256 _lzFee = msg.value - fee;
 
-        IIngot(_ingot).crucibleBurn(msg.sender, _amount);
+        IIngot(_ingot).burn(msg.sender, _amount);
         endpoint.send{ value: _lzFee }(
             MessagingParams(
                 _dstEid,
                 _getPeerOrRevert(_dstEid),
-                abi.encode(_ingotSpec, _destination, _amount),
+                abi.encode(_ingotSpec, _user, _amount),
                 _options,
                 false
             ),
             payable(msg.sender)
         );
 
-        emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid);
+        emit IngotBridged(_ingot, msg.sender, _ingotId, _amount, _dstEid, fee);
     }
 
     function _lzReceive(Origin calldata, bytes32, bytes calldata _payload, address, bytes calldata) internal override {
@@ -117,7 +154,7 @@ contract Crucible is ICrucible, OApp {
             (_spec, _bUser, _amount) = abi.decode(_payload, (IngotSpec, bytes32, uint256));
             _ingot = _createIngot(_spec);
         }
-        IIngot(_ingot).crucibleMint(_bUser.bytes32ToAddress(), _amount);
+        IIngot(_ingot).mint(_bUser.bytes32ToAddress(), _amount);
     }
 
     // Internal
@@ -135,17 +172,29 @@ contract Crucible is ICrucible, OApp {
         return clone;
     }
 
+    function _takeWrapFee(uint256 _amount) internal returns (uint256) {
+        uint256 _fee = feeCalculator.wrap(msg.sender, _amount);
+        require(payable(feeRecipient).send(_fee), "feeRecipient transfer failed");
+        return _fee;
+    }
+
+    function _takeUnwrapFee(uint256 _amount) internal returns (uint256) {
+        uint256 _fee = feeCalculator.unwrap(msg.sender, _amount);
+        require(payable(feeRecipient).send(_fee), "feeRecipient transfer failed");
+        return _fee;
+    }
+
     function _takeBridgeFee(uint256 _amount) internal returns (uint256) {
         uint256 _fee = feeCalculator.bridge(msg.sender, _amount);
         require(payable(feeRecipient).send(_fee), "feeRecipient transfer failed");
-        return msg.value - _fee;
+        return _fee;
     }
 
     // Views
     function quoteSendIngot(
         uint32 _dstEid,
         bytes calldata _options,
-        address _destination,
+        address _user,
         uint256 _ingotId,
         uint256 _amount
     ) public view returns (MessagingFee memory) {
@@ -154,7 +203,7 @@ contract Crucible is ICrucible, OApp {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_ingotId, _destination.addressToBytes32(), _amount),
+                    abi.encode(_ingotId, _user.addressToBytes32(), _amount),
                     _options,
                     false
                 ),
@@ -165,7 +214,7 @@ contract Crucible is ICrucible, OApp {
     function quoteCreateThenSendIngot(
         uint32 _dstEid,
         bytes calldata _options,
-        address _destination,
+        address _user,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) public view returns (MessagingFee memory) {
@@ -174,7 +223,7 @@ contract Crucible is ICrucible, OApp {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_ingotSpec, _destination.addressToBytes32(), _amount),
+                    abi.encode(_ingotSpec, _user.addressToBytes32(), _amount),
                     _options,
                     false
                 ),

@@ -18,14 +18,9 @@ import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Rec
 import { IERC1155Receiver } from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-// TODO: Perhaps this contract can go eventless for easier indexing
-
 contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver, IERC1155Receiver {
     using SafeERC20 for IERC20;
     using IngotSpecLib for IngotSpec;
-
-    event Fused(address indexed user, uint256 amount);
-    event Dissolved(address indexed user, uint256 amount);
 
     ICrucible public crucible;
 
@@ -59,141 +54,105 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
         ingotSymbol = _ingotSpec.getSymbol();
     }
 
-    function crucibleMint(address to, uint256 amount) external onlyCrucible {
-        _mint(to, amount);
+    function mint(address user, uint256 amount) external onlyCrucible {
+        _mint(user, amount);
     }
 
-    function crucibleBurn(address from, uint256 amount) external onlyCrucible {
-        require(msg.sender == address(crucible), "Only crucible can burn");
-        _burn(from, amount);
+    function burn(address user, uint256 amount) external onlyCrucible {
+        _burn(user, amount);
     }
 
-    function spec() public view returns (IngotSpec memory) {
-        return ingotSpec;
+    function wrap(address user, uint256 amount, uint256[][] calldata floorIds) external payable onlyCrucible {
+        uint256 j = 0;
+        for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
+            if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {
+                _take(user, i, amount);
+            } else {
+                _takeFloors(user, i, amount, floorIds[j]);
+                ++j;
+            }
+        }
+        _mint(user, amount);
     }
 
-    function name() public view override returns (string memory) {
-        return ingotName;
+    function unwrap(address user, uint256 amount, uint256[][] calldata floorIds) external onlyCrucible {
+        uint256 j = 0;
+        for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
+            if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {
+                _give(user, i, amount);
+            } else {
+                _giveFloors(user, i, amount, floorIds[j]);
+                ++j;
+            }
+        }
+        _burn(user, amount);
     }
 
-    function symbol() public view override returns (string memory) {
-        return ingotSymbol;
-    }
-
-    function _take(uint256 nuggetSpecIndex, uint256 amount) private {
+    // Internal
+    function _take(address user, uint256 nuggetSpecIndex, uint256 amount) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            uint256 _fee = crucible.feeCalculator().wrap(msg.sender, amount);
-            require(msg.value == amount * 10 ** _nuggetSpec.decimalsOrFloorAmount + _fee, "Invalid amount");
-
-            require(payable(crucible.feeRecipient()).send(_fee), "feeRecipient transfer failed");
+            require(msg.value == amount * 10 ** _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransferFrom(
-                msg.sender,
+                user,
                 address(this),
                 amount * 10 ** _nuggetSpec.decimalsOrFloorAmount
             );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(msg.sender, address(this), _nuggetSpec.ids[i]);
+                IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), _nuggetSpec.ids[i]);
             }
         } else if (_nuggetSpec.collectionType == CollectionType.ERC1155) {
             uint256[] memory amounts = new uint256[](_nuggetSpec.ids.length);
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 amounts[i] = _nuggetSpec.amounts[i] * amount;
             }
-            IERC1155(_nuggetSpec.collection).safeBatchTransferFrom(
-                msg.sender,
-                address(this),
-                _nuggetSpec.ids,
-                amounts,
-                ""
-            );
+            IERC1155(_nuggetSpec.collection).safeBatchTransferFrom(user, address(this), _nuggetSpec.ids, amounts, "");
         }
     }
 
-    function _takeFloors(uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
+    function _takeFloors(address user, uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
             require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
             for (uint i = 0; i < floorIds.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(msg.sender, address(this), floorIds[i]);
+                IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), floorIds[i]);
             }
         }
     }
 
-    function _give(uint256 nuggetSpecIndex, uint256 amount) private {
+    function _give(address user, uint256 nuggetSpecIndex, uint256 amount) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.NATIVE) {
-            (bool success, ) = msg.sender.call{ value: amount * 10 ** _nuggetSpec.decimalsOrFloorAmount }("");
+            (bool success, ) = user.call{ value: amount * 10 ** _nuggetSpec.decimalsOrFloorAmount }("");
             require(success, "Transfer failed");
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
-            IERC20(_nuggetSpec.collection).safeTransfer(msg.sender, amount * 10 ** _nuggetSpec.decimalsOrFloorAmount);
+            IERC20(_nuggetSpec.collection).safeTransfer(user, amount * 10 ** _nuggetSpec.decimalsOrFloorAmount);
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, _nuggetSpec.ids[i]);
+                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, _nuggetSpec.ids[i]);
             }
         } else if (_nuggetSpec.collectionType == CollectionType.ERC1155) {
             uint256[] memory amounts = new uint256[](_nuggetSpec.ids.length);
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 amounts[i] = _nuggetSpec.amounts[i] * amount;
             }
-            IERC1155(_nuggetSpec.collection).safeBatchTransferFrom(
-                address(this),
-                msg.sender,
-                _nuggetSpec.ids,
-                amounts,
-                ""
-            );
+            IERC1155(_nuggetSpec.collection).safeBatchTransferFrom(address(this), user, _nuggetSpec.ids, amounts, "");
         }
     }
 
-    function _giveFloors(uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
+    function _giveFloors(address user, uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         if (_nuggetSpec.collectionType == CollectionType.ERC721FLOOR) {
             require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
             for (uint i = 0; i < floorIds.length; ++i) {
-                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), msg.sender, floorIds[i]);
+                IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, floorIds[i]);
             }
         }
     }
 
-    // Wrap
-    function fuse(uint256 amount, uint256[][] calldata floorIds) public payable nonReentrant {
-        uint256 j = 0;
-        for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
-            if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {
-                _take(i, amount);
-            } else {
-                _takeFloors(i, amount, floorIds[j]);
-                ++j;
-            }
-        }
-        _mint(msg.sender, amount);
-
-        emit Fused(msg.sender, amount);
-    }
-
-    // Unwrap
-    function dissolve(uint256 amount, uint256[][] calldata floorIds) public payable nonReentrant {
-        uint256 _fee = crucible.feeCalculator().unwrap(msg.sender, amount);
-        require(msg.value == _fee, "Invalid fee");
-
-        require(payable(crucible.feeRecipient()).send(_fee), "feeRecipient transfer failed");
-
-        uint256 j = 0;
-        for (uint256 i = 0; i < ingotSpec.nuggetSpecs.length; ++i) {
-            if (ingotSpec.nuggetSpecs[i].collectionType != CollectionType.ERC721FLOOR) {
-                _give(i, amount);
-            } else {
-                _giveFloors(i, amount, floorIds[j]);
-                ++j;
-            }
-        }
-        _burn(msg.sender, amount);
-        emit Dissolved(msg.sender, amount);
-    }
-
+    // Views
     function onERC721Received(address, address, uint256, bytes memory) public pure override returns (bytes4) {
         return this.onERC721Received.selector;
     }
@@ -225,5 +184,17 @@ contract Ingot is IIngot, ERC20, Initializable, ReentrancyGuard, IERC721Receiver
             interfaceId == type(IERC721Receiver).interfaceId ||
             interfaceId == type(IERC1155Receiver).interfaceId ||
             interfaceId == type(IIngot).interfaceId;
+    }
+
+    function spec() public view returns (IngotSpec memory) {
+        return ingotSpec;
+    }
+
+    function name() public view override returns (string memory) {
+        return ingotName;
+    }
+
+    function symbol() public view override returns (string memory) {
+        return ingotSymbol;
     }
 }

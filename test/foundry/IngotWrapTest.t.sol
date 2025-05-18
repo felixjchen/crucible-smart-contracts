@@ -76,6 +76,10 @@ contract IngotWrapTest is TestHelperOz5 {
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
 
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
+
         assertEq(ingot.name(), "Ingot NATIVE:31337:10^18");
         assertEq(ingot.symbol(), "IO NATIVE:31337");
 
@@ -88,13 +92,13 @@ contract IngotWrapTest is TestHelperOz5 {
         // Bunch of success cases
         vm.deal(userA, initialBalance);
         vm.startPrank(userA);
-        ingot.fuse{ value: initialBalance }(100, emptyFloorIds);
+        crucible.fuse{ value: initialBalance }(ingotId, 100, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 100);
         assertEq(ingot.totalSupply(), 100);
         assertEq(address(ingot).balance, initialBalance);
         assertEq(userA.balance, 0);
 
-        ingot.dissolve(100, emptyFloorIds);
+        crucible.dissolve(ingotId, 100, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(address(ingot).balance, 0);
@@ -105,11 +109,11 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.startPrank(userB);
         vm.deal(userB, 1 ether);
         vm.expectRevert();
-        ingot.fuse{ value: 1 wei }(1 ether, emptyFloorIds);
+        crucible.fuse{ value: 1 wei }(ingotId, 1 ether, emptyFloorIds);
         vm.expectRevert();
-        ingot.fuse{ value: 1 ether }(1 ether, emptyFloorIds);
+        crucible.fuse{ value: 1 ether }(ingotId, 1 ether, emptyFloorIds);
         // 18 decimals will succeed
-        ingot.fuse{ value: 1 ether }(1, emptyFloorIds);
+        crucible.fuse{ value: 1 ether }(ingotId, 1, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -125,6 +129,9 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
 
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^0");
         assertEq(ingot.symbol(), "IO BRINE");
@@ -140,13 +147,13 @@ contract IngotWrapTest is TestHelperOz5 {
         erc20mockA.mint(userA, initialBalance);
         erc20mockA.approve(address(ingot), initialBalance);
 
-        ingot.fuse(initialBalance, emptyFloorIds);
+        crucible.fuse(ingotId, initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), initialBalance);
         assertEq(ingot.totalSupply(), initialBalance);
         assertEq(erc20mockA.balanceOf(address(ingot)), initialBalance);
         assertEq(erc20mockA.balanceOf(userA), 0);
 
-        ingot.dissolve(initialBalance, emptyFloorIds);
+        crucible.dissolve(ingotId, initialBalance, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc20mockA.balanceOf(address(ingot)), 0);
@@ -157,15 +164,15 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.startPrank(userB);
         erc20mockA.mint(userB, 1 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, emptyFloorIds);
+        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.approve(address(ingot), 10 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, emptyFloorIds);
+        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.mint(userB, 9 wei);
         vm.expectRevert();
-        ingot.dissolve(10 wei, emptyFloorIds);
+        crucible.dissolve(ingotId, 10 wei, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -181,6 +188,9 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
 
         assertEq(ingot.name(), "Ingot ERC20:BRINE:10^18");
         assertEq(ingot.symbol(), "IO BRINE");
@@ -196,13 +206,13 @@ contract IngotWrapTest is TestHelperOz5 {
         erc20mockA.mint(userA, 1 * 10 ** 18);
         erc20mockA.approve(address(ingot), 1 * 10 ** 18);
 
-        ingot.fuse(1, emptyFloorIds);
+        crucible.fuse(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc20mockA.balanceOf(address(ingot)), 1 * 10 ** 18);
         assertEq(erc20mockA.balanceOf(userA), 0);
 
-        ingot.dissolve(1, emptyFloorIds);
+        crucible.dissolve(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc20mockA.balanceOf(address(ingot)), 0);
@@ -213,15 +223,15 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.startPrank(userB);
         erc20mockA.mint(userB, 1 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, emptyFloorIds);
+        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.approve(address(ingot), 10 wei);
         vm.expectRevert();
-        ingot.fuse(10 wei, emptyFloorIds);
+        crucible.fuse(ingotId, 10 wei, emptyFloorIds);
 
         erc20mockA.mint(userB, 9 wei);
         vm.expectRevert();
-        ingot.dissolve(10 wei, emptyFloorIds);
+        crucible.dissolve(ingotId, 10 wei, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -237,6 +247,9 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1xFLOOR");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:1xFLOOR");
@@ -258,7 +271,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIds[0][0] = 1;
         floorIds[0][1] = 2;
         floorIds[0][2] = 3;
-        ingot.fuse(3, floorIds);
+        crucible.fuse(ingotId, 3, floorIds);
         assertEq(ingot.balanceOf(userA), 3);
         assertEq(ingot.totalSupply(), 3);
         assertEq(erc721mockA.ownerOf(1), address(ingot));
@@ -267,7 +280,7 @@ contract IngotWrapTest is TestHelperOz5 {
         assertEq(erc721mockA.balanceOf(address(ingot)), 3);
         assertEq(erc721mockA.balanceOf(userA), 0);
 
-        ingot.dissolve(3, floorIds);
+        crucible.dissolve(ingotId, 3, floorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc721mockA.ownerOf(1), address(userA));
@@ -291,14 +304,14 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIdsB[0][2] = 7;
 
         vm.expectRevert();
-        ingot.fuse(3, floorIdsB);
+        crucible.fuse(ingotId, 3, floorIdsB);
 
         floorIdsB[0][2] = 6;
-        ingot.fuse(3, floorIdsB);
+        crucible.fuse(ingotId, 3, floorIdsB);
 
         floorIdsB[0][2] = 7;
         vm.expectRevert();
-        ingot.dissolve(3, floorIdsB); // [4, 5, 7] is not owned by contract
+        crucible.dissolve(ingotId, 3, floorIdsB); // [4, 5, 7] is not owned by contract
 
         uint256[][] memory floorIdsBGreedy = new uint256[][](1);
         floorIdsBGreedy[0] = new uint256[](4);
@@ -308,7 +321,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIdsBGreedy[0][3] = 7;
 
         vm.expectRevert();
-        ingot.dissolve(3, floorIdsBGreedy); // [4, 5, 6] is owned by contract
+        crucible.dissolve(ingotId, 3, floorIdsBGreedy); // [4, 5, 6] is owned by contract
     }
 
     function test_erc721floor_flooramounts() public {
@@ -323,6 +336,9 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:3xFLOOR");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:3xFLOOR");
@@ -350,7 +366,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIds[0][3] = 4;
         floorIds[0][4] = 5;
         floorIds[0][5] = 6;
-        ingot.fuse(2, floorIds);
+        crucible.fuse(ingotId, 2, floorIds);
         assertEq(ingot.balanceOf(userA), 2);
         assertEq(ingot.totalSupply(), 2);
         assertEq(erc721mockA.ownerOf(1), address(ingot));
@@ -362,7 +378,7 @@ contract IngotWrapTest is TestHelperOz5 {
         assertEq(erc721mockA.balanceOf(address(ingot)), 6);
         assertEq(erc721mockA.balanceOf(userA), 0);
 
-        ingot.dissolve(2, floorIds);
+        crucible.dissolve(ingotId, 2, floorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc721mockA.ownerOf(1), address(userA));
@@ -394,6 +410,9 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
 
         assertEq(ingot.name(), "Ingot ERC721:MoredCrepePopeClub:1,2,3");
         assertEq(ingot.symbol(), "IO MoredCrepePopeClub:1,2,3");
@@ -413,7 +432,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc721mockA.mint(userA, 3);
         erc721mockA.setApprovalForAll(address(ingot), true);
 
-        ingot.fuse(1, emptyFloorIds);
+        crucible.fuse(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc721mockA.ownerOf(1), address(ingot));
@@ -422,7 +441,7 @@ contract IngotWrapTest is TestHelperOz5 {
         assertEq(erc721mockA.balanceOf(address(ingot)), 3);
         assertEq(erc721mockA.balanceOf(userA), 0);
 
-        ingot.dissolve(1, emptyFloorIds);
+        crucible.dissolve(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc721mockA.ownerOf(1), address(userA));
@@ -439,9 +458,9 @@ contract IngotWrapTest is TestHelperOz5 {
         erc721mockA.mint(userB, 6);
         erc721mockA.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
-        ingot.fuse(1, emptyFloorIds);
+        crucible.fuse(ingotId, 1, emptyFloorIds);
         vm.expectRevert();
-        ingot.dissolve(1, emptyFloorIds);
+        crucible.dissolve(ingotId, 1, emptyFloorIds);
         vm.stopPrank();
     }
 
@@ -466,6 +485,9 @@ contract IngotWrapTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
+
+        assertEq(ingot.ingotId(), ingotId);
 
         string memory collection_string = Strings.toHexString(uint256(uint160(nuggetSpec.collection)), 20);
         string memory name = string.concat("Ingot ERC1155:", collection_string, ":1x1,2x2,3x3");
@@ -488,7 +510,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userA, 2, 2);
         erc1155mockA.mint(userA, 3, 3);
         erc1155mockA.setApprovalForAll(address(ingot), true);
-        ingot.fuse(1, emptyFloorIds);
+        crucible.fuse(ingotId, 1, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);
         assertEq(erc1155mockA.balanceOf(address(ingot), 1), 1);
@@ -502,7 +524,7 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userA, 2, 20);
         erc1155mockA.mint(userA, 3, 30);
 
-        ingot.fuse(10, emptyFloorIds);
+        crucible.fuse(ingotId, 10, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 11);
         assertEq(ingot.totalSupply(), 11);
         assertEq(erc1155mockA.balanceOf(address(ingot), 1), 11);
@@ -512,7 +534,7 @@ contract IngotWrapTest is TestHelperOz5 {
         assertEq(erc1155mockA.balanceOf(userA, 2), 0);
         assertEq(erc1155mockA.balanceOf(userA, 3), 0);
 
-        ingot.dissolve(11, emptyFloorIds);
+        crucible.dissolve(ingotId, 11, emptyFloorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(erc1155mockA.balanceOf(address(ingot), 1), 0);
@@ -530,19 +552,19 @@ contract IngotWrapTest is TestHelperOz5 {
         erc1155mockA.mint(userB, 6, 3);
         erc1155mockA.setApprovalForAll(address(ingot), true);
         vm.expectRevert();
-        ingot.fuse(1, emptyFloorIds);
+        crucible.fuse(ingotId, 1, emptyFloorIds);
         vm.expectRevert();
-        ingot.dissolve(1, emptyFloorIds);
+        crucible.dissolve(ingotId, 1, emptyFloorIds);
 
         erc1155mockA.mint(userB, 1, 1);
         erc1155mockA.mint(userB, 2, 2);
         erc1155mockA.mint(userB, 3, 2);
         vm.expectRevert();
-        ingot.fuse(1, emptyFloorIds);
+        crucible.fuse(ingotId, 1, emptyFloorIds);
 
         erc1155mockA.mint(userB, 3, 1);
         vm.expectRevert();
-        ingot.fuse(2, emptyFloorIds);
+        crucible.fuse(ingotId, 2, emptyFloorIds);
     }
 
     function test_many() public {
@@ -597,6 +619,7 @@ contract IngotWrapTest is TestHelperOz5 {
 
         // 1 ingot = 1 ether + 10**18 ERC20 + 2 ERC721FLOOR + ERC721:1,2 + ERC1155:1x3,2x4
         Ingot ingot = Ingot(crucible.createIngot(ingotSpec));
+        uint256 ingotId = ingot.ingotId();
 
         assertEq(
             ingot.name(),
@@ -625,7 +648,7 @@ contract IngotWrapTest is TestHelperOz5 {
         floorIds[0][0] = 1;
         floorIds[0][1] = 2;
 
-        ingot.fuse{ value: 1 ether }(1, floorIds);
+        crucible.fuse{ value: 1 ether }(ingotId, 1, floorIds);
 
         assertEq(ingot.balanceOf(userA), 1);
         assertEq(ingot.totalSupply(), 1);

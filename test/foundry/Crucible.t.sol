@@ -123,12 +123,12 @@ contract CrucibleTest is TestHelperOz5 {
         floorIds[0][0] = 0;
         floorIds[0][1] = 1;
         floorIds[0][2] = 2;
-        ingot.fuse{ value: 3 wei + feeAmount }(3, floorIds);
+        aCrucible.fuse{ value: 3 wei + feeAmount }(ingotSpec.getId(), 3, floorIds);
         assertEq(ingot.balanceOf(userA), 3);
         assertEq(ingot.totalSupply(), 3);
         assertEq(userA.balance, feeAmount);
         assertEq(erc721mock.balanceOf(userA), 0);
-        ingot.dissolve{ value: feeAmount }(3, floorIds);
+        aCrucible.dissolve{ value: feeAmount }(ingotSpec.getId(), 3, floorIds);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         assertEq(userA.balance, 3 wei);
@@ -158,7 +158,7 @@ contract CrucibleTest is TestHelperOz5 {
         floorIds[0][0] = 0;
         floorIds[0][1] = 1;
         floorIds[0][2] = 2;
-        ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
+        aCrucible.fuse{ value: 3 wei + feeAmount }(ingotSpec.getId(), 3, floorIds);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
 
@@ -196,7 +196,7 @@ contract CrucibleTest is TestHelperOz5 {
         floorIds[0][0] = 0;
         floorIds[0][1] = 1;
         floorIds[0][2] = 2;
-        ingotA.fuse{ value: 3 wei + feeAmount }(3, floorIds);
+        aCrucible.fuse{ value: 3 wei + feeAmount }(ingotSpec.getId(), 3, floorIds);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
         MessagingFee memory messagingFee = aCrucible.quoteCreateThenSendIngot(bEid, options, userA, ingotSpec, 3);

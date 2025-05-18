@@ -11,11 +11,11 @@ interface IIngot is IERC20 {
 
     function initialize(ICrucible _crucible, uint256 _ingotId, IngotSpec calldata _ingotSpec) external;
 
-    function crucibleMint(address to, uint256 amount) external;
+    function mint(address user, uint256 amount) external;
 
-    function crucibleBurn(address from, uint256 amount) external;
+    function burn(address user, uint256 amount) external;
 
-    function fuse(uint256 amount, uint256[][] calldata floorIds) external payable;
+    function wrap(address user, uint256 amount, uint256[][] calldata floorIds) external payable;
 
-    function dissolve(uint256 amount, uint256[][] calldata floorIds) external payable;
+    function unwrap(address user, uint256 amount, uint256[][] calldata floorIds) external;
 }

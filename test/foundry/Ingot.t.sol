@@ -100,7 +100,7 @@ contract IngotTest is TestHelperOz5 {
         );
     }
 
-    function test_crucibleMint() public {
+    function test_mint() public {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
@@ -116,17 +116,17 @@ contract IngotTest is TestHelperOz5 {
 
         vm.startPrank(userA);
         vm.expectRevert();
-        ingot.crucibleMint(userA, 1 ether);
+        ingot.mint(userA, 1 ether);
         vm.stopPrank();
 
         vm.startPrank(address(crucible));
-        ingot.crucibleMint(userA, 1 ether);
+        ingot.mint(userA, 1 ether);
         assertEq(ingot.balanceOf(userA), 1 ether);
         assertEq(ingot.totalSupply(), 1 ether);
         vm.stopPrank();
     }
 
-    function test_crucibleBurn() public {
+    function test_burn() public {
         NuggetSpec memory nuggetSpec = NuggetSpec({
             collection: address(erc20mock),
             collectionType: CollectionType.ERC20,
@@ -141,16 +141,16 @@ contract IngotTest is TestHelperOz5 {
         ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
 
         vm.startPrank(address(crucible));
-        ingot.crucibleMint(userA, 1 ether);
+        ingot.mint(userA, 1 ether);
         vm.stopPrank();
 
         vm.startPrank(userA);
         vm.expectRevert();
-        ingot.crucibleBurn(userA, 1 ether);
+        ingot.burn(userA, 1 ether);
         vm.stopPrank();
 
         vm.startPrank(address(crucible));
-        ingot.crucibleBurn(userA, 1 ether);
+        ingot.burn(userA, 1 ether);
         assertEq(ingot.balanceOf(userA), 0);
         assertEq(ingot.totalSupply(), 0);
         vm.stopPrank();
