@@ -15,7 +15,7 @@ interface ICrucible {
     function transmute(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         uint256 _ingotId,
         uint256 amount
     ) external payable;
@@ -23,7 +23,7 @@ interface ICrucible {
     function transmuteWithInvent(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) external payable;
@@ -31,7 +31,7 @@ interface ICrucible {
     function quoteTransmute(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         uint256 _ingotId,
         uint256 _amount
     ) external view returns (MessagingFee memory);
@@ -39,7 +39,7 @@ interface ICrucible {
     function quoteTransmuteWithInvent(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) external view returns (MessagingFee memory);

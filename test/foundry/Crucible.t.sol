@@ -19,10 +19,12 @@ import "forge-std/console.sol";
 import { TestHelperOz5 } from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 import { OptionsBuilder } from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 import { MessagingFee } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import { OFTMsgCodec } from "@layerzerolabs/oft-evm/contracts/libs/OFTMsgCodec.sol";
 
 contract CrucibleTest is TestHelperOz5 {
     using IngotSpecLib for IngotSpec;
     using OptionsBuilder for bytes;
+    using OFTMsgCodec for address;
 
     uint32 private aEid = 1;
     uint32 private bEid = 2;
@@ -163,9 +165,21 @@ contract CrucibleTest is TestHelperOz5 {
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(200000, 0);
 
         uint256 _ingotId = ingotSpec.getId();
-        MessagingFee memory messagingFee = aCrucible.quoteTransmute(bEid, options, userA, _ingotId, 3);
+        MessagingFee memory messagingFee = aCrucible.quoteTransmute(
+            bEid,
+            options,
+            userA.addressToBytes32(),
+            _ingotId,
+            3
+        );
 
-        aCrucible.transmute{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, _ingotId, 3);
+        aCrucible.transmute{ value: feeAmount + messagingFee.nativeFee }(
+            bEid,
+            options,
+            userA.addressToBytes32(),
+            _ingotId,
+            3
+        );
         verifyPackets(bEid, addressToBytes32(address(bCrucible)));
 
         vm.stopPrank();
@@ -199,9 +213,21 @@ contract CrucibleTest is TestHelperOz5 {
         aCrucible.forge{ value: 3 wei + feeAmount }(ingotSpec.getId(), 3, floorIds);
 
         bytes memory options = OptionsBuilder.newOptions().addExecutorLzReceiveOption(1_000_000, 0);
-        MessagingFee memory messagingFee = aCrucible.quoteTransmuteWithInvent(bEid, options, userA, ingotSpec, 3);
+        MessagingFee memory messagingFee = aCrucible.quoteTransmuteWithInvent(
+            bEid,
+            options,
+            userA.addressToBytes32(),
+            ingotSpec,
+            3
+        );
 
-        aCrucible.transmuteWithInvent{ value: feeAmount + messagingFee.nativeFee }(bEid, options, userA, ingotSpec, 3);
+        aCrucible.transmuteWithInvent{ value: feeAmount + messagingFee.nativeFee }(
+            bEid,
+            options,
+            userA.addressToBytes32(),
+            ingotSpec,
+            3
+        );
         verifyPackets(bEid, addressToBytes32(address(bCrucible)));
         IIngot ingotB = IIngot(bCrucible.ingotRegistry(ingotSpec.getId()));
 

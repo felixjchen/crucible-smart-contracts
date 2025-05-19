@@ -18,7 +18,6 @@ import { OFTMsgCodec } from "@layerzerolabs/oft-evm/contracts/libs/OFTMsgCodec.s
 
 contract Crucible is ICrucible, OApp, ReentrancyGuard {
     using OFTMsgCodec for bytes32;
-    using OFTMsgCodec for address;
     using IngotSpecLib for IngotSpec;
 
     event Invented(uint256 indexed ingotId, IngotSpec ingotSpec);
@@ -73,7 +72,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     function transmute(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         uint256 _ingotId,
         uint256 _amount
     ) public payable {
@@ -85,7 +84,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
 
         IIngot(_ingot).burn(msg.sender, _amount);
         endpoint.send{ value: _lzFee }(
-            MessagingParams(_dstEid, _getPeerOrRevert(_dstEid), abi.encode(_ingotId, _user, _amount), _options, false),
+            MessagingParams(_dstEid, _getPeerOrRevert(_dstEid), abi.encode(_ingotId, _bUser, _amount), _options, false),
             payable(msg.sender)
         );
 
@@ -95,7 +94,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     function transmuteWithInvent(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) public payable {
@@ -111,7 +110,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
             MessagingParams(
                 _dstEid,
                 _getPeerOrRevert(_dstEid),
-                abi.encode(_ingotSpec, _user, _amount),
+                abi.encode(_ingotSpec, _bUser, _amount),
                 _options,
                 false
             ),
@@ -175,7 +174,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     function quoteTransmute(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         uint256 _ingotId,
         uint256 _amount
     ) public view returns (MessagingFee memory) {
@@ -184,7 +183,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_ingotId, _user.addressToBytes32(), _amount),
+                    abi.encode(_ingotId, _bUser, _amount),
                     _options,
                     false
                 ),
@@ -195,7 +194,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     function quoteTransmuteWithInvent(
         uint32 _dstEid,
         bytes calldata _options,
-        address _user,
+        bytes32 _bUser,
         IngotSpec calldata _ingotSpec,
         uint256 _amount
     ) public view returns (MessagingFee memory) {
@@ -204,7 +203,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
                 MessagingParams(
                     _dstEid,
                     _getPeerOrRevert(_dstEid),
-                    abi.encode(_ingotSpec, _user.addressToBytes32(), _amount),
+                    abi.encode(_ingotSpec, _bUser, _amount),
                     _options,
                     false
                 ),
