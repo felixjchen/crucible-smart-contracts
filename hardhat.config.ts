@@ -6,6 +6,7 @@
 import 'dotenv/config'
 
 import 'hardhat-deploy'
+import '@nomicfoundation/hardhat-verify'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
 import '@layerzerolabs/toolbox-hardhat'
@@ -52,19 +53,14 @@ const config: HardhatUserConfig = {
         ],
     },
     networks: {
-        'optimism-testnet': {
+        optimismSepolia: {
             eid: EndpointId.OPTSEP_V2_TESTNET,
-            url: process.env.RPC_URL_OP_SEPOLIA || 'https://optimism-sepolia.gateway.tenderly.co',
+            url: process.env.RPC_URL_OP_SEPOLIA || 'https://sepolia.optimism.io',
             accounts,
         },
-        'avalanche-testnet': {
-            eid: EndpointId.AVALANCHE_V2_TESTNET,
-            url: process.env.RPC_URL_FUJI || 'https://avalanche-fuji.drpc.org',
-            accounts,
-        },
-        'arbitrum-testnet': {
-            eid: EndpointId.ARBSEP_V2_TESTNET,
-            url: process.env.RPC_URL_ARB_SEPOLIA || 'https://arbitrum-sepolia.gateway.tenderly.co',
+        baseSepolia: {
+            eid: EndpointId.BASESEP_V2_TESTNET,
+            url: process.env.RPC_URL_BASE_SEPOLIA || 'https://sepolia.base.org',
             accounts,
         },
         hardhat: {
@@ -76,6 +72,27 @@ const config: HardhatUserConfig = {
         deployer: {
             default: 0, // wallet address of index[0], of the mnemonic in .env
         },
+        // https://docs.layerzero.network/v2/deployments/deployed-contracts
+        endpointv2: {
+            optimismSepolia: '0x6EDCE65403992e310A62460808c4b910D972f10f',
+            baseSepolia: '0x6EDCE65403992e310A62460808c4b910D972f10f',
+        },
+    },
+    etherscan: {
+        apiKey: {
+            optimismSepolia: process.env.OPTIMISM_SCAN_API_KEY || '',
+            baseSepolia: process.env.BASE_SCAN_API_KEY || '',
+        },
+        customChains: [
+            {
+                network: 'optimismSepolia',
+                chainId: 11155420,
+                urls: {
+                    apiURL: 'https://api-sepolia-optimism.etherscan.io/api',
+                    browserURL: 'https://sepolia-optimism.etherscan.io',
+                },
+            },
+        ],
     },
 }
 

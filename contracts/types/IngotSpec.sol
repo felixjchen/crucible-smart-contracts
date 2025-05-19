@@ -31,8 +31,8 @@ library IngotSpecLib {
     function getName(IngotSpec memory _ingotSpec) public view returns (string memory) {
         string memory symbol = "Ingot";
         for (uint i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
-            NuggetSpec memory ingotSpec = _ingotSpec.nuggetSpecs[i];
-            symbol = string.concat(symbol, " ", ingotSpec.getNameSuffix());
+            NuggetSpec memory _nuggetSpec = _ingotSpec.nuggetSpecs[i];
+            symbol = string.concat(symbol, " ", _nuggetSpec.getNameSuffix());
         }
         return symbol;
     }
@@ -40,8 +40,8 @@ library IngotSpecLib {
     function getSymbol(IngotSpec memory _ingotSpec) public view returns (string memory) {
         string memory symbol = "IO";
         for (uint i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {
-            NuggetSpec memory ingotSpec = _ingotSpec.nuggetSpecs[i];
-            symbol = string.concat(symbol, " ", ingotSpec.getSymbolSuffix());
+            NuggetSpec memory _nuggetSpec = _ingotSpec.nuggetSpecs[i];
+            symbol = string.concat(symbol, " ", _nuggetSpec.getSymbolSuffix());
         }
         return symbol;
     }
