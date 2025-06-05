@@ -100,12 +100,12 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
             );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             require(amount == 1, "Invalid amount");
-            for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
+            for (uint256 i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), _nuggetSpec.ids[i]);
             }
         } else if (_nuggetSpec.collectionType == CollectionType.ERC1155) {
             uint256[] memory amounts = new uint256[](_nuggetSpec.ids.length);
-            for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
+            for (uint256 i = 0; i < _nuggetSpec.ids.length; ++i) {
                 amounts[i] = _nuggetSpec.amounts[i] * amount;
             }
             IERC1155(_nuggetSpec.collection).safeBatchTransferFrom(user, address(this), _nuggetSpec.ids, amounts, "");
@@ -115,7 +115,7 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
     function _takeFloors(address user, uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
-        for (uint i = 0; i < floorIds.length; ++i) {
+        for (uint256 i = 0; i < floorIds.length; ++i) {
             IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), floorIds[i]);
         }
     }
@@ -129,12 +129,12 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
             IERC20(_nuggetSpec.collection).safeTransfer(user, amount * 10 ** _nuggetSpec.decimalsOrFloorAmount);
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
             require(amount == 1, "Invalid amount");
-            for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
+            for (uint256 i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, _nuggetSpec.ids[i]);
             }
         } else if (_nuggetSpec.collectionType == CollectionType.ERC1155) {
             uint256[] memory amounts = new uint256[](_nuggetSpec.ids.length);
-            for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
+            for (uint256 i = 0; i < _nuggetSpec.ids.length; ++i) {
                 amounts[i] = _nuggetSpec.amounts[i] * amount;
             }
             IERC1155(_nuggetSpec.collection).safeBatchTransferFrom(address(this), user, _nuggetSpec.ids, amounts, "");
@@ -144,7 +144,7 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
     function _giveFloors(address user, uint256 nuggetSpecIndex, uint256 amount, uint256[] memory floorIds) private {
         NuggetSpec memory _nuggetSpec = ingotSpec.nuggetSpecs[nuggetSpecIndex];
         require(floorIds.length == amount * _nuggetSpec.decimalsOrFloorAmount, "Invalid amount");
-        for (uint i = 0; i < floorIds.length; ++i) {
+        for (uint256 i = 0; i < floorIds.length; ++i) {
             IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, floorIds[i]);
         }
     }
