@@ -29,7 +29,9 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
     string private ingotName;
     string private ingotSymbol;
 
-    constructor() ERC20("IngotBaseImplementation", "IngotBaseImplementation") {}
+    constructor() ERC20("IngotBaseImplementation", "IngotBaseImplementation") {
+        _disableInitializers();
+    }
 
     modifier onlyCrucible() {
         require(msg.sender == address(crucible), "Only crucible can call ingots");
