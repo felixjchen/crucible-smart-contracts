@@ -20,9 +20,9 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     using OFTMsgCodec for bytes32;
     using IngotSpecLib for IngotSpec;
 
-    event Invented(uint256 indexed ingotId, IngotSpec ingotSpec);
+    event Invented(uint256 indexed ingotId, address indexed ingot, IngotSpec ingotSpec);
     event Transmuted(uint256 indexed ingotId, address indexed user, uint256 amount, uint32 dstEid, uint256 fee);
-    event Fused(uint256 indexed ingotId, address indexed user, uint256 amount, uint256[][] floorIds, uint256 fee);
+    event Forged(uint256 indexed ingotId, address indexed user, uint256 amount, uint256[][] floorIds, uint256 fee);
     event Dissolved(uint256 indexed ingotId, address indexed user, uint256 amount, uint256[][] floorIds, uint256 fee);
 
     IIngot private immutable ingotImplementation;
@@ -47,7 +47,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
         return _createIngot(_ingotSpec);
     }
 
-    function forge(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable nonReentrant {
+    function forge(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) public payable nonReentrant {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
@@ -55,10 +55,10 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
 
         IIngot(_ingot).wrap{ value: msg.value - fee }(msg.sender, _amount, floorIds);
 
-        emit Fused(_ingotId, msg.sender, _amount, floorIds, fee);
+        emit Forged(_ingotId, msg.sender, _amount, floorIds, fee);
     }
 
-    function dissolve(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) external payable nonReentrant {
+    function dissolve(uint256 _ingotId, uint256 _amount, uint256[][] calldata floorIds) public payable nonReentrant {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
@@ -125,6 +125,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
         uint256 _amount;
 
         address _ingot;
+        // We have two paths since the creation path is more expensive, the LZ packet for creation contains the entire IngotSpec.
         if (_payload.length == 3 * 32) {
             uint256 _ingotId;
             (_ingotId, _bUser, _amount) = abi.decode(_payload, (uint256, bytes32, uint256));
@@ -139,16 +140,17 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
 
     // Internal
     function _createIngot(IngotSpec memory _ingotSpec) internal returns (address) {
+        uint256 _ingotId = _ingotSpec.getId();
+        require(ingotRegistry[_ingotId] == address(0), "Ingot already exists");
+
         // (1) _ingotSpec.validate() and (2) _ingotSpec.getId() == _ingotId are true for Ingot.initialize()
         _ingotSpec.validate();
-        uint256 _ingotId = _ingotSpec.getId();
 
-        require(ingotRegistry[_ingotId] == address(0), "Ingot already exists");
         address clone = Clones.clone(address(ingotImplementation));
         IIngot(clone).initialize(ICrucible(address(this)), _ingotId, _ingotSpec);
         ingotRegistry[_ingotId] = clone;
 
-        emit Invented(_ingotId, _ingotSpec);
+        emit Invented(_ingotId, clone, _ingotSpec);
         return clone;
     }
 
@@ -212,12 +214,12 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     }
 
     // Admin
-    function setFeeCalculator(IFeeCalculator _feeCalculator) external onlyOwner {
+    function setFeeCalculator(IFeeCalculator _feeCalculator) public onlyOwner {
         require(address(_feeCalculator) != address(0), "Invalid fee calculator");
         feeCalculator = _feeCalculator;
     }
 
-    function setFeeRecipient(address _feeRecipient) external onlyOwner {
+    function setFeeRecipient(address _feeRecipient) public onlyOwner {
         require(_feeRecipient != address(0), "Invalid fee recipient");
         feeRecipient = _feeRecipient;
     }

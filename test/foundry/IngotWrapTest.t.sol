@@ -10,9 +10,9 @@ import { Crucible } from "contracts/Crucible.sol";
 import { NativeFixedFeeCalculator } from "contracts/NativeFixedFeeCalculator.sol";
 
 // Mock imports
-import { ERC20Mock } from "../mocks/ERC20Mock.sol";
-import { ERC721Mock } from "../mocks/ERC721Mock.sol";
-import { ERC1155Mock } from "../mocks/ERC1155Mock.sol";
+import { ERC20Mock } from "contracts/mocks/ERC20Mock.sol";
+import { ERC721Mock } from "contracts/mocks/ERC721Mock.sol";
+import { ERC1155Mock } from "contracts/mocks/ERC1155Mock.sol";
 
 // Forge imports
 import "forge-std/console.sol";

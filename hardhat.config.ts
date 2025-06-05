@@ -4,6 +4,7 @@
 // - Duplicate .env.example file and name it .env
 // - Fill in the environment variables
 import 'dotenv/config'
+import '@typechain/hardhat'
 
 import 'hardhat-deploy'
 import '@nomicfoundation/hardhat-verify'
@@ -38,6 +39,10 @@ if (accounts == null) {
 const config: HardhatUserConfig = {
     paths: {
         cache: 'cache/hardhat',
+    },
+    typechain: {
+        outDir: 'typechain',
+        target: 'ethers-v6',
     },
     solidity: {
         compilers: [
