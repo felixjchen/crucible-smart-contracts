@@ -452,6 +452,13 @@ contract IngotWrapTest is TestHelperOz5 {
         vm.stopPrank();
 
         // Bunch of failure cases
+        vm.startPrank(userA);
+        erc721mockA.setApprovalForAll(address(ingot), true);
+        vm.expectRevert();
+        crucible.forge(ingotId, 2, emptyFloorIds);
+        vm.stopPrank();
+
+        // Bunch of failure cases with different user
         vm.startPrank(userB);
         erc721mockA.mint(userB, 4);
         erc721mockA.mint(userB, 5);

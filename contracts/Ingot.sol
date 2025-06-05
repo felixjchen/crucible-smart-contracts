@@ -99,6 +99,7 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
                 amount * 10 ** _nuggetSpec.decimalsOrFloorAmount
             );
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
+            require(amount == 1, "Invalid amount");
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(user, address(this), _nuggetSpec.ids[i]);
             }
@@ -127,6 +128,7 @@ contract Ingot is IIngot, ERC20, Initializable, IERC721Receiver, IERC1155Receive
         } else if (_nuggetSpec.collectionType == CollectionType.ERC20) {
             IERC20(_nuggetSpec.collection).safeTransfer(user, amount * 10 ** _nuggetSpec.decimalsOrFloorAmount);
         } else if (_nuggetSpec.collectionType == CollectionType.ERC721) {
+            require(amount == 1, "Invalid amount");
             for (uint i = 0; i < _nuggetSpec.ids.length; ++i) {
                 IERC721(_nuggetSpec.collection).safeTransferFrom(address(this), user, _nuggetSpec.ids[i]);
             }
