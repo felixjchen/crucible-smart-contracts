@@ -72,9 +72,10 @@ contract IngotTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+
+        ingot = Ingot(ICrucible(crucible).invent(ingotSpec));
         vm.expectRevert();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        ingot = Ingot(ICrucible(crucible).invent(ingotSpec));
     }
 
     function test_supportsInterface() public view {
@@ -112,7 +113,7 @@ contract IngotTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        ingot = Ingot(ICrucible(crucible).invent(ingotSpec));
 
         vm.startPrank(userA);
         vm.expectRevert();
@@ -138,7 +139,7 @@ contract IngotTest is TestHelperOz5 {
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
-        ingot.initialize(ICrucible(crucible), ingotId, ingotSpec);
+        ingot = Ingot(ICrucible(crucible).invent(ingotSpec));
 
         vm.startPrank(address(crucible));
         ingot.mint(userA, 1 ether);
