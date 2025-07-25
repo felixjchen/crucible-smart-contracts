@@ -13,11 +13,11 @@ library IngotSpecLib {
     using Strings for uint256;
     using NuggetSpecLib for NuggetSpec;
 
-    function getId(IngotSpec calldata _ingotSpec) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(_ingotSpec.nuggetSpecs)));
+    function getId(IngotSpec calldata _ingotSpec) public view returns (uint256) {
+        return uint256(keccak256(abi.encode(block.chainid, _ingotSpec.nuggetSpecs)));
     }
 
-    function validate(IngotSpec calldata _ingotSpec) public pure {
+    function validate(IngotSpec calldata _ingotSpec) public view {
         require(_ingotSpec.nuggetSpecs.length >= 1, "IngotSpec.nuggetSpecs must not be empty");
         uint256 lastNuggetSpecId = 0;
         for (uint256 i = 0; i < _ingotSpec.nuggetSpecs.length; ++i) {

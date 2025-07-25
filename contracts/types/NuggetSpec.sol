@@ -32,8 +32,8 @@ library NuggetSpecLib {
     using Strings for uint256;
     using Strings for uint24;
 
-    function getId(NuggetSpec memory _nuggetSpec) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(_nuggetSpec)));
+    function getId(NuggetSpec memory _nuggetSpec) public view returns (uint256) {
+        return uint256(keccak256(abi.encode(block.chainid, _nuggetSpec)));
     }
 
     function validate(NuggetSpec calldata _nuggetSpec) public pure {
