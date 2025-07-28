@@ -44,6 +44,7 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
     }
 
     function invent(IngotSpec calldata _ingotSpec) public returns (address) {
+        require(_ingotSpec.chainId == block.chainid, "IngotSpec.chainId must match current chain ID");
         return _createIngot(_ingotSpec);
     }
 
@@ -51,8 +52,10 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
-        uint256 fee = _takeWrapFee(_amount);
+        // TODO: Test this
+        require(IIngot(_ingot).spec().chainId == block.chainid, "IngotSpec.chainId must match current chain ID");
 
+        uint256 fee = _takeWrapFee(_amount);
         IIngot(_ingot).wrap{ value: msg.value - fee }(msg.sender, _amount, floorIds);
 
         emit Forged(_ingotId, msg.sender, _amount, floorIds, fee);
@@ -62,8 +65,10 @@ contract Crucible is ICrucible, OApp, ReentrancyGuard {
         address _ingot = ingotRegistry[_ingotId];
         require(_ingot != address(0), "Ingot not registered");
 
-        uint256 fee = _takeUnwrapFee(_amount);
+        // TODO: Test this
+        require(IIngot(_ingot).spec().chainId == block.chainid, "IngotSpec.chainId must match current chain ID");
 
+        uint256 fee = _takeUnwrapFee(_amount);
         IIngot(_ingot).unwrap(msg.sender, _amount, floorIds);
 
         emit Dissolved(_ingotId, msg.sender, _amount, floorIds, fee);

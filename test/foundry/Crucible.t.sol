@@ -73,7 +73,7 @@ contract CrucibleTest is TestHelperOz5 {
     }
 
     function getIngotSpec() public view returns (IngotSpec memory) {
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](2) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](2) });
         uint256[] memory ids = new uint256[](0);
         uint256[] memory amounts = new uint256[](0);
         NuggetSpec memory nuggetSpecA = NuggetSpec({

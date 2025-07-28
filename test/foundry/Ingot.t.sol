@@ -68,7 +68,7 @@ contract IngotTest is TestHelperOz5 {
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
@@ -109,7 +109,7 @@ contract IngotTest is TestHelperOz5 {
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
@@ -135,7 +135,7 @@ contract IngotTest is TestHelperOz5 {
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         uint256 ingotId = ingotSpec.getId();
@@ -165,5 +165,6 @@ contract IngotTest is TestHelperOz5 {
             ids: new uint256[](0),
             amounts: new uint256[](0)
         });
+        nuggetSpec.validate();
     }
 }

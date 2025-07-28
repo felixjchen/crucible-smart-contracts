@@ -71,7 +71,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: emptyArray,
             amounts: emptyArray
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -80,8 +80,8 @@ contract IngotWrapTest is TestHelperOz5 {
 
         assertEq(ingot.ingotId(), ingotId);
 
-        assertEq(ingot.name(), "Ingot NATIVE:31337:10^18");
-        assertEq(ingot.symbol(), "IO NATIVE:31337");
+        assertEq(ingot.name(), "Ingot NATIVE:1:10^18");
+        assertEq(ingot.symbol(), "IO NATIVE:1");
 
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(0));
         assertEq(abi.encode(ingot.spec().nuggetSpecs[0].collectionType), abi.encode(CollectionType.NATIVE));
@@ -125,7 +125,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: emptyArray,
             amounts: emptyArray
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -184,7 +184,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: emptyArray,
             amounts: emptyArray
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -243,7 +243,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: emptyArray,
             amounts: emptyArray
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -332,7 +332,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: emptyArray,
             amounts: emptyArray
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -406,7 +406,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: ids,
             amounts: emptyArray
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -488,7 +488,7 @@ contract IngotWrapTest is TestHelperOz5 {
             ids: ids,
             amounts: amounts
         });
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](1) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](1) });
         ingotSpec.nuggetSpecs[0] = nuggetSpec;
 
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
@@ -498,7 +498,7 @@ contract IngotWrapTest is TestHelperOz5 {
 
         string memory collection_string = Strings.toHexString(uint256(uint160(nuggetSpec.collection)), 20);
         string memory name = string.concat("Ingot ERC1155:", collection_string, ":1x1,2x2,3x3");
-        string memory symbol = string.concat("IO ", "ERC1155_0x8724478a:1x1,2x2,3x3");
+        string memory symbol = string.concat("IO ", "ERC1155_0x5915874d:1x1,2x2,3x3");
         assertEq(ingot.name(), name);
         assertEq(ingot.symbol(), symbol);
         assertEq(ingot.spec().nuggetSpecs[0].collection, address(erc1155mockA));
@@ -575,7 +575,7 @@ contract IngotWrapTest is TestHelperOz5 {
     }
 
     function test_many() public {
-        IngotSpec memory ingotSpec = IngotSpec({ nuggetSpecs: new NuggetSpec[](5) });
+        IngotSpec memory ingotSpec = IngotSpec({ chainId: block.timestamp, nuggetSpecs: new NuggetSpec[](5) });
         ingotSpec.nuggetSpecs[3] = NuggetSpec({
             collection: address(0),
             collectionType: CollectionType.NATIVE,
@@ -618,24 +618,15 @@ contract IngotWrapTest is TestHelperOz5 {
             amounts: amounts
         });
 
-        console.log(ingotSpec.nuggetSpecs[0].getId());
-        console.log(ingotSpec.nuggetSpecs[1].getId());
-        console.log(ingotSpec.nuggetSpecs[2].getId());
-        console.log(ingotSpec.nuggetSpecs[3].getId());
-        console.log(ingotSpec.nuggetSpecs[4].getId());
-
         // 1 ingot = 1 ether + 10**18 ERC20 + 2 ERC721FLOOR + ERC721:1,2 + ERC1155:1x3,2x4
         Ingot ingot = Ingot(crucible.invent(ingotSpec));
         uint256 ingotId = ingot.ingotId();
 
         assertEq(
             ingot.name(),
-            "Ingot ERC721:MoredCrepePopeClub:2xFLOOR ERC1155:0x8724478ad648d2c08c81ea58feb7cd23f26dc3b0:1x3,2x4 ERC721:BABUKI:1,2 NATIVE:31337:10^18 ERC20:BRINE:10^6"
+            "Ingot ERC721:MoredCrepePopeClub:2xFLOOR ERC1155:0x5915874dc7641bf6c22958546d81c5ba8c2316fd:1x3,2x4 ERC721:BABUKI:1,2 NATIVE:1:10^18 ERC20:BRINE:10^6"
         );
-        assertEq(
-            ingot.symbol(),
-            "IO MoredCrepePopeClub:2xFLOOR ERC1155_0x8724478a:1x3,2x4 BABUKI:1,2 NATIVE:31337 BRINE"
-        );
+        assertEq(ingot.symbol(), "IO MoredCrepePopeClub:2xFLOOR ERC1155_0x5915874d:1x3,2x4 BABUKI:1,2 NATIVE:1 BRINE");
 
         vm.startPrank(userA);
         vm.deal(userA, 1 ether);
