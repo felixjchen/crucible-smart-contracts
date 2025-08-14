@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { utils } from 'ethers'
 
 import { type DeployFunction } from 'hardhat-deploy/types'
 
@@ -21,6 +22,7 @@ const deploy: DeployFunction = async (hre) => {
         from: deployer,
         log: true,
         skipIfAlreadyDeployed: false,
+        deterministicDeployment: utils.id('NuggetSpecLib'),
     })
     await hre.run('verify:verify', {
         address: nuggetSpecLibAddr,
@@ -34,6 +36,7 @@ const deploy: DeployFunction = async (hre) => {
             NuggetSpecLib: nuggetSpecLibAddr,
         },
         skipIfAlreadyDeployed: false,
+        deterministicDeployment: utils.id('IngotSpecLib'),
     })
 
     await hre.run('verify:verify', {
@@ -49,6 +52,7 @@ const deploy: DeployFunction = async (hre) => {
         args: [0, 0, 0],
         log: true,
         skipIfAlreadyDeployed: false,
+        deterministicDeployment: utils.id('NativeFixedFeeCalculator'),
     })
     await hre.run('verify:verify', {
         address: feeAddress,
@@ -63,6 +67,7 @@ const deploy: DeployFunction = async (hre) => {
         },
         log: true,
         skipIfAlreadyDeployed: false,
+        deterministicDeployment: utils.id(contractName),
     })
     await hre.run('verify:verify', {
         address: address,
